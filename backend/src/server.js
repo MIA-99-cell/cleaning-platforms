@@ -73,7 +73,8 @@ app.get('/api/health', async (req, res) => {
   } catch (error) {
     payload.status = 'degraded';
     payload.database = 'error';
-    payload.databaseError = error.message;
+    payload.databaseError = error.message || error.code || String(error);
+    console.error('Health DB check failed:', error);
     res.status(503).json(payload);
   }
 });

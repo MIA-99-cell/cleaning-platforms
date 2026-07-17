@@ -1,9 +1,18 @@
 import axios from 'axios';
 
-const apiBase = (import.meta.env.VITE_API_URL || '/api').replace(/\/$/, '');
+const getApiBase = () => {
+  if (import.meta.env.VITE_API_URL) {
+    return import.meta.env.VITE_API_URL.replace(/\/$/, '');
+  }
+  // On Vercel, call Render directly (more reliable than /api proxy for POST)
+  if (typeof window !== 'undefined' && /\.vercel\.app$/i.test(window.location.hostname)) {
+    return 'https://cleaning-platforms.onrender.com/api';
+  }
+  return '/api';
+};
 
 const api = axios.create({
-  baseURL: apiBase,
+  baseURL: getApiBase(),
   headers: { 'Content-Type': 'application/json' },
 });
 
