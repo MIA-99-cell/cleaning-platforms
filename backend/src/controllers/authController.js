@@ -36,8 +36,11 @@ const findUser = async (userType, email) => {
   const tableConfig = USER_TABLES[userType];
   if (!tableConfig) return null;
 
+  // Keep this PostgreSQL-safe (avoid mixed boolean/text IN lists)
   const [rows] = await pool.query(
-    `SELECT * FROM ${tableConfig.table} WHERE email = ? AND is_active IN (TRUE, '1', 'true', 't', 'yes', 'TRUE')`,
+    `SELECT * FROM ${tableConfig.table}
+     WHERE LOWER(email) = LOWER(?)
+       AND (is_active IS TRUE OR is_active = 1 OR CAST(is_active AS TEXT) IN ('true', 't', '1', 'yes'))`,
     [email]
   );
   return rows[0] || null;
@@ -106,7 +109,16 @@ const login = async (req, res) => {
     }, 'Login successful');
   } catch (error) {
     console.error('Login error:', error);
-    sendError(res, 'Login failed', 500);
+    const dbRelated = /ENOTFOUND|ECONNREFUSED|ECONNRESET|timeout|password authentication|database/i.test(
+      String(error.message || '')
+    );
+    sendError(
+      res,
+      dbRelated
+        ? 'Login failed: cannot reach database. Check DATABASE_URL on the server.'
+        : 'Login failed',
+      500
+    );
   }
 };
 

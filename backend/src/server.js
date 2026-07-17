@@ -63,9 +63,21 @@ app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok', timestamp: new Date().toISOString() });
+app.get('/api/health', async (req, res) => {
+  const payload = { status: 'ok', timestamp: new Date().toISOString(), database: 'unknown' };
+  try {
+    const pool = require('./config/database');
+    await pool.query('SELECT 1 AS ok');
+    payload.database = 'connected';
+    res.json(payload);
+  } catch (error) {
+    payload.status = 'degraded';
+    payload.database = 'error';
+    payload.databaseError = error.message;
+    res.status(503).json(payload);
+  }
 });
+
 
 app.use('/api/auth', authRoutes);
 app.use('/api/super-admin', superAdminRoutes);
