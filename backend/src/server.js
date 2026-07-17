@@ -18,7 +18,29 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
-app.use(cors({ origin: process.env.FRONTEND_URL || 'http://localhost:3000', credentials: true }));
+
+const allowedOrigins = [
+  process.env.FRONTEND_URL,
+  'http://localhost:3000',
+  'http://localhost:5173',
+].filter(Boolean).map((url) => url.replace(/\/$/, ''));
+
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow non-browser tools (no Origin) and known frontends
+    if (!origin) return callback(null, true);
+    const normalized = origin.replace(/\/$/, '');
+    if (
+      allowedOrigins.includes(normalized)
+      || /\.vercel\.app$/i.test(normalized)
+    ) {
+      return callback(null, true);
+    }
+    return callback(new Error(`CORS blocked for origin: ${origin}`));
+  },
+  credentials: true,
+}));
+
 
 app.post('/api/payments/flutterwave/webhook', express.raw({
   type: 'application/json',
