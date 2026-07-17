@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist/
+
+# Secrets — NEVER commit these
+.env
+.env.local
+.env.*.local
+
+# Keep example env files (no real passwords)
+!.env.example
+
+# Uploaded files on server
+backend/uploads/
+
+# Logs
+*.log
+npm-debug.log*
+
+# OS
+.DS_Store
+Thumbs.db

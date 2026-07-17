@@ -1,0 +1,44 @@
+{
+  "name": "cleaning-platform-backend",
+  "version": "1.0.0",
+  "description": "Multi-tenant cleaning platform API",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "nodemon src/server.js",
+    "db:setup": "node database/setup.js",
+    "db:reset": "node database/reset.js",
+    "db:migrate": "node database/migrate.js",
+    "db:seed": "node database/seed-demo.js",
+    "db:update-admin": "node database/update-super-admin.js",
+    "db:notify-pending": "node database/notify-pending.js",
+    "db:fix-booleans": "node scripts/fix-boolean-columns.js",
+    "db:credentials": "node scripts/add-credential-deliveries.js",
+    "db:flutterwave": "node scripts/ensure-flutterwave.js",
+    "test:email": "node scripts/test-email.js",
+    "test:cleaner-email": "node scripts/test-cleaner-email.js",
+    "test:sms": "node scripts/test-sms.js"
+  },
+  "dependencies": {
+    "@supabase/auth-js": "^2.110.1",
+    "@supabase/supabase-js": "^2.110.1",
+    "bcryptjs": "^2.4.3",
+    "cors": "^2.8.5",
+    "dotenv": "^16.4.5",
+    "exceljs": "^4.4.0",
+    "express": "^4.21.0",
+    "express-rate-limit": "^7.4.0",
+    "express-validator": "^7.2.0",
+    "helmet": "^7.1.0",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^1.4.5-lts.1",
+    "mysql2": "^3.11.0",
+    "nodemailer": "^6.9.14",
+    "pdfkit": "^0.15.0",
+    "pg": "^8.22.0",
+    "uuid": "^10.0.0"
+  },
+  "devDependencies": {
+    "nodemon": "^3.1.4"
+  }
+}

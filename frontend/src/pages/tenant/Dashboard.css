@@ -1,0 +1,89 @@
+.tenant-dashboard-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 900px) {
+  .tenant-dashboard-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.tenant-map-card h3,
+.tenant-reviews-card h3 {
+  margin-bottom: 0.5rem;
+}
+
+.tenant-map-frame {
+  width: 100%;
+  height: 280px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+}
+
+.tenant-map-empty {
+  color: var(--text-muted);
+  font-size: 0.9rem;
+}
+
+.tenant-map-link {
+  display: inline-block;
+  margin-top: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.tenant-rating-summary {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 1rem;
+  padding: 0.75rem;
+  background: #f8fafc;
+  border-radius: var(--radius);
+}
+
+.tenant-rating-big {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--primary);
+  line-height: 1;
+}
+
+.tenant-rating-stars {
+  color: #f59e0b;
+  font-size: 1.1rem;
+  letter-spacing: 1px;
+}
+
+.tenant-review-item {
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--border);
+}
+
+.tenant-review-item:last-child {
+  border-bottom: none;
+}
+
+.tenant-review-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  margin-bottom: 0.35rem;
+}
+
+.tenant-review-comment {
+  font-size: 0.9rem;
+  margin: 0;
+}
+
+.tenant-review-reply {
+  margin-top: 0.35rem;
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  font-style: italic;
+}
