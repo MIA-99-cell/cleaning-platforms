@@ -64,7 +64,13 @@ app.use(rateLimit({ windowMs: 15 * 60 * 1000, max: 200 }));
 app.use('/uploads', express.static(path.join(__dirname, '..', 'uploads')));
 
 app.get('/api/health', async (req, res) => {
-  const payload = { status: 'ok', timestamp: new Date().toISOString(), database: 'unknown' };
+  const { isSmtpConfigured } = require('./services/emailService');
+  const payload = {
+    status: 'ok',
+    timestamp: new Date().toISOString(),
+    database: 'unknown',
+    emailConfigured: isSmtpConfigured(),
+  };
   try {
     const pool = require('./config/database');
     await pool.query('SELECT 1 AS ok');

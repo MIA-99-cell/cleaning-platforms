@@ -65,7 +65,7 @@ const Cleaners = () => {
 
       toast.success(res.data.message);
       if (!emailSent) {
-        toast.error('Email not sent. Add SMTP_PASS in backend/.env (Gmail app password).');
+        toast.error('Email not sent. On the live site, add SMTP_PASS in Render Environment (not Vercel).');
       }
       setShowForm(false);
       setForm({ full_name: '', email: '', phone: '' });
@@ -82,7 +82,7 @@ const Cleaners = () => {
       setCredentials({ name, email, tempPassword, emailSent });
       toast.success(res.data.message);
       if (!emailSent) {
-        toast.error('Email not sent. Add SMTP_PASS in backend/.env (Gmail app password).');
+        toast.error('Email not sent. On the live site, add SMTP_PASS in Render Environment (not Vercel).');
       }
     } catch {
       toast.error('Failed to reset password');
