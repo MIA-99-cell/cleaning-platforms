@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
 const { logActivity } = require('../utils/logger');
+const { storeUploadedFile } = require('../services/storageService');
 
 const getDashboard = async (req, res) => {
   try {
@@ -114,7 +115,7 @@ const getServices = async (req, res) => {
 const createService = async (req, res) => {
   try {
     const { name, description, price, duration_minutes } = req.body;
-    const image_url = req.file ? `/uploads/services/${req.file.filename}` : null;
+    const image_url = req.file ? await storeUploadedFile(req.file, 'services') : null;
 
     const [result] = await pool.query(
       `INSERT INTO services (tenant_id, name, description, price, duration_minutes, image_url) VALUES (?, ?, ?, ?, ?, ?)`,
@@ -131,7 +132,7 @@ const updateService = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, price, duration_minutes, is_active } = req.body;
-    const image_url = req.file ? `/uploads/services/${req.file.filename}` : undefined;
+    const image_url = req.file ? await storeUploadedFile(req.file, 'services') : undefined;
 
     const updates = [];
     const params = [];

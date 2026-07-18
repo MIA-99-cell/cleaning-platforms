@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { storeUploadedFile } = require('../services/storageService');
 
 const getTenantProducts = async (req, res) => {
   try {
@@ -17,7 +18,7 @@ const getTenantProducts = async (req, res) => {
 const createProduct = async (req, res) => {
   try {
     const { name, description, price, stock_quantity } = req.body;
-    const image_url = req.file ? `/uploads/products/${req.file.filename}` : null;
+    const image_url = req.file ? await storeUploadedFile(req.file, 'products') : null;
 
     const [result] = await pool.query(
       `INSERT INTO products (tenant_id, name, description, price, stock_quantity, image_url)
@@ -36,7 +37,7 @@ const updateProduct = async (req, res) => {
   try {
     const { id } = req.params;
     const { name, description, price, stock_quantity, is_active } = req.body;
-    const image_url = req.file ? `/uploads/products/${req.file.filename}` : undefined;
+    const image_url = req.file ? await storeUploadedFile(req.file, 'products') : undefined;
 
     const updates = [];
     const params = [];
