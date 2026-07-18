@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import api from '../services/api';
+import api, { resolveAssetUrl } from '../services/api';
 import { formatCFA } from '../utils/currency';
 import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
@@ -70,7 +70,7 @@ const MarketplaceSection = ({ title = 'Cleaning Products Marketplace', limit, sh
             <article key={product.id} className="marketplace-card">
               <div className="marketplace-image-wrap">
                 {productImage(product.image_url) ? (
-                  <img src={product.image_url} alt={product.name} className="marketplace-image" />
+                  <img src={resolveAssetUrl(product.image_url)} alt={product.name} className="marketplace-image" />
                 ) : (
                   <div className="marketplace-image-placeholder">🧴</div>
                 )}

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import api from '../../services/api';
+import api, { resolveAssetUrl } from '../../services/api';
 import toast from 'react-hot-toast';
 import { formatCFA, CURRENCY_LABEL } from '../../utils/currency';
 
@@ -174,7 +174,7 @@ const Products = () => {
                 <tr key={p.id}>
                   <td>
                     {p.image_url ? (
-                      <img src={p.image_url} alt={p.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
+                      <img src={resolveAssetUrl(p.image_url)} alt={p.name} style={{ width: 48, height: 48, objectFit: 'cover', borderRadius: 6 }} />
                     ) : '—'}
                   </td>
                   <td>{p.name}</td>

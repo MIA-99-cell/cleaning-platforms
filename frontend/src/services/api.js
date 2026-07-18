@@ -16,6 +16,15 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+// Uploaded files (e.g. /uploads/products/x.png) live on the backend server,
+// so on Vercel they must be prefixed with the Render origin.
+export const resolveAssetUrl = (url) => {
+  if (!url) return null;
+  if (/^https?:\/\//i.test(url)) return url;
+  const backendOrigin = getApiBase().replace(/\/api$/, '');
+  return `${backendOrigin}${url.startsWith('/') ? '' : '/'}${url}`;
+};
+
 api.interceptors.request.use((config) => {
   const token = localStorage.getItem('token');
   if (token) config.headers.Authorization = `Bearer ${token}`;

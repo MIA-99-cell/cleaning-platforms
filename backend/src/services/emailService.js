@@ -241,6 +241,72 @@ const emailTemplates = {
     `,
     text: `${isTenant ? 'New order' : 'Order confirmed'}: ${itemSummary}. Total ${totalAmount}. Payment: ${paymentMethod}.`,
   }),
+  newServiceBooking: ({
+    recipientName,
+    isTenant,
+    companyName,
+    customerName,
+    customerPhone,
+    customerEmail,
+    serviceName,
+    scheduledDate,
+    scheduledTime,
+    address,
+    totalAmount,
+    specialInstructions,
+    bookingId,
+  }) => ({
+    subject: isTenant
+      ? `New Service Booking - ${serviceName}`
+      : `Booking Confirmation - ${serviceName}`,
+    html: `
+      <h2>${isTenant ? 'New Service Booking' : 'Your Booking is Confirmed'}</h2>
+      <p>Hello ${recipientName},</p>
+      <p>${isTenant
+        ? `<strong>${customerName}</strong> booked a service with <strong>${companyName}</strong>.`
+        : `Thank you for booking with <strong>${companyName}</strong>.`}</p>
+      <table style="background:#f1f5f9;padding:16px;border-radius:8px;margin:16px 0;">
+        <tr><td style="padding:4px 8px;"><strong>Booking #</strong></td><td style="padding:4px 8px;">${bookingId}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Service</strong></td><td style="padding:4px 8px;">${serviceName}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Date</strong></td><td style="padding:4px 8px;">${scheduledDate}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Time</strong></td><td style="padding:4px 8px;">${scheduledTime}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Address</strong></td><td style="padding:4px 8px;">${address}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Amount</strong></td><td style="padding:4px 8px;">${totalAmount}</td></tr>
+        ${isTenant ? `<tr><td style="padding:4px 8px;"><strong>Customer</strong></td><td style="padding:4px 8px;">${customerName}</td></tr>` : ''}
+        ${isTenant && customerPhone ? `<tr><td style="padding:4px 8px;"><strong>Phone</strong></td><td style="padding:4px 8px;">${customerPhone}</td></tr>` : ''}
+        ${isTenant && customerEmail ? `<tr><td style="padding:4px 8px;"><strong>Email</strong></td><td style="padding:4px 8px;">${customerEmail}</td></tr>` : ''}
+        ${specialInstructions ? `<tr><td style="padding:4px 8px;"><strong>Notes</strong></td><td style="padding:4px 8px;">${specialInstructions}</td></tr>` : ''}
+      </table>
+      <p><a href="${config.frontendUrl}/login" style="background:#2563eb;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;">Open Dashboard</a></p>
+    `,
+    text: `${isTenant ? 'New booking' : 'Booking confirmed'}: ${serviceName} on ${scheduledDate} at ${scheduledTime}. Address: ${address}. Amount: ${totalAmount}.`,
+  }),
+  serviceCompleted: ({
+    customerName,
+    companyName,
+    serviceName,
+    cleanerName,
+    scheduledDate,
+    address,
+    bookingId,
+  }) => ({
+    subject: `Service Completed - ${serviceName}`,
+    html: `
+      <h2>Your Service is Complete</h2>
+      <p>Hello ${customerName},</p>
+      <p><strong>${companyName}</strong> has completed your service. Thank you for choosing us!</p>
+      <table style="background:#f1f5f9;padding:16px;border-radius:8px;margin:16px 0;">
+        <tr><td style="padding:4px 8px;"><strong>Booking #</strong></td><td style="padding:4px 8px;">${bookingId}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Service</strong></td><td style="padding:4px 8px;">${serviceName}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Date</strong></td><td style="padding:4px 8px;">${scheduledDate}</td></tr>
+        <tr><td style="padding:4px 8px;"><strong>Address</strong></td><td style="padding:4px 8px;">${address}</td></tr>
+        ${cleanerName ? `<tr><td style="padding:4px 8px;"><strong>Cleaner</strong></td><td style="padding:4px 8px;">${cleanerName}</td></tr>` : ''}
+      </table>
+      <p>We would love to hear your feedback. Log in to leave a review.</p>
+      <p><a href="${config.frontendUrl}/login" style="background:#16a34a;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;">Leave a Review</a></p>
+    `,
+    text: `Hello ${customerName}, ${companyName} has completed your ${serviceName} service (booking #${bookingId}). Log in to leave a review: ${config.frontendUrl}/login`,
+  }),
   newCustomerReview: ({ tenantName, customerName, companyRating, cleanerRating, comment, reviewsUrl }) => ({
     subject: `New Customer Review - ${companyRating}★`,
     html: `

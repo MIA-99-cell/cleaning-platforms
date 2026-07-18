@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
 const { sendCleanerJobAssignmentEmail } = require('../services/cleanerEmailService');
+const { notifyServiceBookingPlaced, notifyServiceCompleted } = require('../services/bookingNotificationService');
 
 const getBookings = async (req, res) => {
   try {
@@ -68,6 +69,12 @@ const updateBookingStatus = async (req, res) => {
       `UPDATE bookings SET ${setClause} WHERE id = ? AND tenant_id = ?`,
       [...Object.values(updates), id, req.tenantId]
     );
+
+    if (action === 'complete') {
+      notifyServiceCompleted({ bookingId: id }).catch((err) => {
+        console.error('[Completion Notify] Failed:', err.message);
+      });
+    }
 
     if (action === 'assign' && cleaner_id) {
       await pool.query(
@@ -148,8 +155,23 @@ const createBooking = async (req, res) => {
       [service[0].tenant_id, service[0].tenant_id]
     );
 
+    notifyServiceBookingPlaced({
+      tenantId: service[0].tenant_id,
+      customerId,
+      bookingId: result.insertId,
+      serviceName: service[0].name,
+      scheduledDate: scheduled_date,
+      scheduledTime: scheduled_time,
+      address,
+      totalAmount: service[0].price,
+      specialInstructions: special_instructions,
+    }).catch((err) => {
+      console.error('[Booking Notify] Failed:', err.message);
+    });
+
     sendSuccess(res, { id: result.insertId }, 'Booking created successfully', 201);
   } catch (error) {
+    console.error('createBooking error:', error.message);
     sendError(res, 'Failed to create booking', 500);
   }
 };
@@ -221,6 +243,10 @@ const updateJobStatus = async (req, res) => {
         'UPDATE cleaners SET total_jobs_completed = total_jobs_completed + 1 WHERE id = ?',
         [cleanerId]
       );
+
+      notifyServiceCompleted({ bookingId: assignment[0].booking_id }).catch((err) => {
+        console.error('[Completion Notify] Failed:', err.message);
+      });
     }
 
     sendSuccess(res, null, 'Job status updated');
