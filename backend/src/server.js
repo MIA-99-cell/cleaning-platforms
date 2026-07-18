@@ -86,6 +86,16 @@ app.get('/api/health', async (req, res) => {
 });
 
 
+app.get('/api/health/email', async (req, res) => {
+  const { verifySmtp } = require('./services/emailService');
+  const result = await verifySmtp();
+  res.json({
+    ...result,
+    smtpUser: process.env.SMTP_USER || null,
+    passLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
+  });
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/tenant', tenantRoutes);

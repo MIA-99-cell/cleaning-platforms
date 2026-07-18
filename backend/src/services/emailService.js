@@ -360,10 +360,25 @@ const emailTemplates = {
   }),
 };
 
+/** Checks whether Gmail actually accepts the configured credentials. */
+const verifySmtp = async () => {
+  if (!isSmtpConfigured()) {
+    return { configured: false, verified: false, error: 'SMTP settings missing' };
+  }
+  try {
+    const transport = getTransporter();
+    await transport.verify();
+    return { configured: true, verified: true };
+  } catch (error) {
+    return { configured: true, verified: false, error: error.message };
+  }
+};
+
 module.exports = {
   sendEmail,
   sendTransactionalEmail,
   sendNotificationEmail,
   emailTemplates,
   isSmtpConfigured,
+  verifySmtp,
 };
