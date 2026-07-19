@@ -72,6 +72,7 @@ app.get('/api/health', async (req, res) => {
     emailConfigured: isSmtpConfigured() || !!process.env.RESEND_API_KEY,
     smtpConfigured: isSmtpConfigured(),
     resendConfigured: !!process.env.RESEND_API_KEY,
+    storageConfigured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
   };
   try {
     const pool = require('./config/database');

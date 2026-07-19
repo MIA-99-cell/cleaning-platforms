@@ -62,7 +62,7 @@ const getCompanyProfile = async (req, res) => {
 const updateCompanyProfile = async (req, res) => {
   try {
     const { company_name, address, phone, email, working_hours, license_number, description, latitude, longitude } = req.body;
-    const logo_url = req.file ? `/uploads/logos/${req.file.filename}` : undefined;
+    const logo_url = req.file ? await storeUploadedFile(req.file, 'logos') : undefined;
 
     if (!email || !String(email).trim()) {
       return sendError(res, 'Company email is required for notifications and customer contact', 400);

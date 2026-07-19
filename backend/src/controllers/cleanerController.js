@@ -3,6 +3,7 @@ const { hashPassword, generateRandomPassword } = require('../utils/auth');
 const { sendCleanerCredentialsEmail } = require('../services/cleanerEmailService');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
+const { storeUploadedFile } = require('../services/storageService');
 
 const getCleaners = async (req, res) => {
   try {
@@ -92,7 +93,7 @@ const updateCleaner = async (req, res) => {
   try {
     const { id } = req.params;
     const { full_name, phone, status } = req.body;
-    const photo_url = req.file ? `/uploads/cleaners/${req.file.filename}` : undefined;
+    const photo_url = req.file ? await storeUploadedFile(req.file, 'cleaners') : undefined;
 
     const updates = [];
     const params = [];

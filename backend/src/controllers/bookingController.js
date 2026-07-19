@@ -3,6 +3,7 @@ const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
 const { sendCleanerJobAssignmentEmail } = require('../services/cleanerEmailService');
 const { notifyServiceBookingPlaced, notifyServiceCompleted } = require('../services/bookingNotificationService');
+const { storeUploadedFile } = require('../services/storageService');
 
 const getBookings = async (req, res) => {
   try {
@@ -224,7 +225,7 @@ const updateJobStatus = async (req, res) => {
     if (action === 'completed') updates.completed_at = new Date();
     if (notes) updates.notes = notes;
 
-    const completion_photo_url = req.file ? `/uploads/completions/${req.file.filename}` : undefined;
+    const completion_photo_url = req.file ? await storeUploadedFile(req.file, 'completions') : undefined;
     if (completion_photo_url) updates.completion_photo_url = completion_photo_url;
 
     const setClause = Object.keys(updates).map((k) => `${k} = ?`).join(', ');
