@@ -113,18 +113,26 @@ const sendTransactionalEmail = async ({ to, subject, html, text }) => {
     console.error('[Email] Resend failed:', resendResult.error);
   }
 
+  const host = String(config.email.host || '');
+  const isGmail = host.includes('gmail');
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  // Gmail SMTP almost always times out from Render. Don't wait ~8s for a failure we already know.
+  if (isProduction && isGmail && !isResendConfigured()) {
+    const error = 'Gmail SMTP is blocked on Render. Add RESEND_API_KEY in Render Environment.';
+    console.error('[Email]', error);
+    return {
+      success: false,
+      error,
+      hint: 'Create a free key at https://resend.com/api-keys and set RESEND_API_KEY on Render.',
+    };
+  }
+
   const smtpResult = await sendEmail({ to, subject, html, text });
   if (smtpResult.success && !smtpResult.dev) return smtpResult;
 
   if (!isResendConfigured() && smtpResult.dev) {
     console.error('[Email] Not configured. Set RESEND_API_KEY (recommended on Render) or SMTP_USER + SMTP_PASS');
-  }
-
-  // If SMTP timed out/failed and Resend was not tried yet, try now.
-  if (!isResendConfigured()) {
-    // already handled above when configured
-  } else if (!smtpResult.success) {
-    // Resend already failed above; keep that error if more specific
   }
 
   return {

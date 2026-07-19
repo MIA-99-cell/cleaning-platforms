@@ -68,7 +68,7 @@ const Cleaners = () => {
         toast.error(
           emailError
             ? `Email not sent: ${emailError}`
-            : 'Email not sent. On Render, Gmail SMTP is blocked — add RESEND_API_KEY instead.'
+            : 'Email not sent: Gmail SMTP is blocked on Render. Add RESEND_API_KEY in Render Environment.'
         );
       }
       setShowForm(false);
@@ -89,7 +89,7 @@ const Cleaners = () => {
         toast.error(
           emailError
             ? `Email not sent: ${emailError}`
-            : 'Email not sent. On Render, Gmail SMTP is blocked — add RESEND_API_KEY instead.'
+            : 'Email not sent: Gmail SMTP is blocked on Render. Add RESEND_API_KEY in Render Environment.'
         );
       }
     } catch {
