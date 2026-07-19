@@ -73,6 +73,7 @@ app.get('/api/health', async (req, res) => {
     smtpConfigured: isSmtpConfigured(),
     resendConfigured: !!process.env.RESEND_API_KEY,
     storageConfigured: !!(process.env.SUPABASE_URL && process.env.SUPABASE_SERVICE_ROLE_KEY),
+    flutterwaveConfigured: !!(process.env.FLW_CLIENT_ID && process.env.FLW_CLIENT_SECRET),
   };
   try {
     const pool = require('./config/database');
