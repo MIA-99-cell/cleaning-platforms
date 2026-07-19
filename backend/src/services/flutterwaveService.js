@@ -9,8 +9,13 @@ const FLW_API_BASE = process.env.FLW_ENV === 'live'
 let cachedToken = null;
 let tokenExpiresAt = 0;
 
+const trimEnv = (value) => {
+  if (value == null) return '';
+  return String(value).trim().replace(/^["']|["']$/g, '');
+};
+
 const isConfigured = () => Boolean(
-  process.env.FLW_CLIENT_ID && process.env.FLW_CLIENT_SECRET
+  trimEnv(process.env.FLW_CLIENT_ID) && trimEnv(process.env.FLW_CLIENT_SECRET)
 );
 
 const getAccessToken = async () => {
@@ -22,9 +27,12 @@ const getAccessToken = async () => {
     return cachedToken;
   }
 
+  const clientId = trimEnv(process.env.FLW_CLIENT_ID);
+  const clientSecret = trimEnv(process.env.FLW_CLIENT_SECRET);
+
   const body = new URLSearchParams({
-    client_id: process.env.FLW_CLIENT_ID,
-    client_secret: process.env.FLW_CLIENT_SECRET,
+    client_id: clientId,
+    client_secret: clientSecret,
     grant_type: 'client_credentials',
   });
 
@@ -220,8 +228,46 @@ const isSuccessfulCharge = (charge) => {
   return status === 'succeeded' || status === 'successful';
 };
 
+/** Checks whether Flutterwave OAuth accepts the configured credentials. */
+const verifyCredentials = async () => {
+  if (!isConfigured()) {
+    return {
+      configured: false,
+      verified: false,
+      error: 'FLW_CLIENT_ID or FLW_CLIENT_SECRET missing',
+      hint: 'Add both keys in Render Environment (not Vercel).',
+    };
+  }
+
+  try {
+    cachedToken = null;
+    tokenExpiresAt = 0;
+    await getAccessToken();
+    return {
+      configured: true,
+      verified: true,
+      env: process.env.FLW_ENV || 'test',
+      clientIdPrefix: trimEnv(process.env.FLW_CLIENT_ID).slice(0, 8),
+      secretLength: trimEnv(process.env.FLW_CLIENT_SECRET).length,
+    };
+  } catch (error) {
+    return {
+      configured: true,
+      verified: false,
+      env: process.env.FLW_ENV || 'test',
+      clientIdPrefix: trimEnv(process.env.FLW_CLIENT_ID).slice(0, 8),
+      secretLength: trimEnv(process.env.FLW_CLIENT_SECRET).length,
+      error: error.message,
+      hint: /invalid client/i.test(error.message)
+        ? 'Render has the wrong Client ID or Client Secret. Copy fresh values from Flutterwave dashboard — no quotes, no spaces.'
+        : 'Check Flutterwave dashboard credentials and FLW_ENV=test for sandbox keys.',
+    };
+  }
+};
+
 module.exports = {
   isConfigured,
+  verifyCredentials,
   createDirectCharge,
   verifyCharge,
   verifyWebhookSignature,

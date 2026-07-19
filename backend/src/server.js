@@ -101,6 +101,12 @@ app.get('/api/health/email', async (req, res) => {
   });
 });
 
+app.get('/api/health/flutterwave', async (req, res) => {
+  const { verifyCredentials } = require('./services/flutterwaveService');
+  const result = await verifyCredentials();
+  res.json(result);
+});
+
 app.use('/api/auth', authRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/tenant', tenantRoutes);
