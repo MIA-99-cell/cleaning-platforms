@@ -57,6 +57,21 @@ const Products = () => {
     fetchData();
   };
 
+  const changeImage = async (id, file) => {
+    if (!file) return;
+    const data = new FormData();
+    data.append('image', file);
+    try {
+      await api.put(`/tenant/products/${id}`, data, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+      toast.success('Image updated');
+      fetchData();
+    } catch {
+      toast.error('Failed to update image');
+    }
+  };
+
   const deleteProduct = async (id) => {
     if (!confirm('Delete this product? If it has past orders, it will be removed from the marketplace only.')) return;
     try {
@@ -185,6 +200,15 @@ const Products = () => {
                     <button className="btn btn-outline btn-sm" onClick={() => toggleProduct(p.id, p.is_active)}>
                       {p.is_active ? 'Deactivate' : 'Activate'}
                     </button>
+                    <label className="btn btn-outline btn-sm" style={{ marginLeft: 4, cursor: 'pointer' }}>
+                      Change Image
+                      <input
+                        type="file"
+                        accept="image/*"
+                        style={{ display: 'none' }}
+                        onChange={(e) => { changeImage(p.id, e.target.files?.[0]); e.target.value = ''; }}
+                      />
+                    </label>
                     <button className="btn btn-danger btn-sm" style={{ marginLeft: 4 }} onClick={() => deleteProduct(p.id)}>Delete</button>
                   </td>
                 </tr>
