@@ -54,7 +54,7 @@ const Cleaners = () => {
     e.preventDefault();
     try {
       const res = await api.post('/tenant/cleaners', form);
-      const { email, tempPassword, emailSent } = res.data.data;
+      const { email, tempPassword, emailSent, emailError } = res.data.data;
 
       setCredentials({
         name: form.full_name,
@@ -65,7 +65,11 @@ const Cleaners = () => {
 
       toast.success(res.data.message);
       if (!emailSent) {
-        toast.error('Email not sent. On the live site, add SMTP_PASS in Render Environment (not Vercel).');
+        toast.error(
+          emailError
+            ? `Email not sent: ${emailError}`
+            : 'Email not sent. On Render, Gmail SMTP is blocked — add RESEND_API_KEY instead.'
+        );
       }
       setShowForm(false);
       setForm({ full_name: '', email: '', phone: '' });
@@ -78,11 +82,15 @@ const Cleaners = () => {
   const resetPassword = async (id, name, email) => {
     try {
       const res = await api.post(`/tenant/cleaners/${id}/reset-password`);
-      const { tempPassword, emailSent } = res.data.data;
+      const { tempPassword, emailSent, emailError } = res.data.data;
       setCredentials({ name, email, tempPassword, emailSent });
       toast.success(res.data.message);
       if (!emailSent) {
-        toast.error('Email not sent. On the live site, add SMTP_PASS in Render Environment (not Vercel).');
+        toast.error(
+          emailError
+            ? `Email not sent: ${emailError}`
+            : 'Email not sent. On Render, Gmail SMTP is blocked — add RESEND_API_KEY instead.'
+        );
       }
     } catch {
       toast.error('Failed to reset password');

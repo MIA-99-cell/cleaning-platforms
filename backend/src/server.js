@@ -69,7 +69,9 @@ app.get('/api/health', async (req, res) => {
     status: 'ok',
     timestamp: new Date().toISOString(),
     database: 'unknown',
-    emailConfigured: isSmtpConfigured(),
+    emailConfigured: isSmtpConfigured() || !!process.env.RESEND_API_KEY,
+    smtpConfigured: isSmtpConfigured(),
+    resendConfigured: !!process.env.RESEND_API_KEY,
   };
   try {
     const pool = require('./config/database');
@@ -87,12 +89,13 @@ app.get('/api/health', async (req, res) => {
 
 
 app.get('/api/health/email', async (req, res) => {
-  const { verifySmtp } = require('./services/emailService');
+  const { verifySmtp, isResendConfigured } = require('./services/emailService');
   const result = await verifySmtp();
   res.json({
     ...result,
     smtpUser: process.env.SMTP_USER || null,
     passLength: process.env.SMTP_PASS ? process.env.SMTP_PASS.length : 0,
+    resendConfigured: isResendConfigured(),
   });
 });
 

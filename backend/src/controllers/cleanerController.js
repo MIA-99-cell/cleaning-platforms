@@ -48,6 +48,7 @@ const createCleaner = async (req, res) => {
     const companyName = company[0]?.company_name || 'Cleaning Company';
 
     let emailSent = false;
+    let emailError = null;
     let emailResult = {};
     if (req.body.send_email !== false) {
       try {
@@ -59,12 +60,15 @@ const createCleaner = async (req, res) => {
           isReset: false,
         });
         emailSent = emailResult.emailSent;
+        emailError = emailResult.error || null;
 
         if (!emailSent) {
           console.log(`[Dev] Cleaner credentials for ${email}:`);
           console.log(`  Password: ${tempPassword}`);
+          console.error('[Cleaner Email] Reason:', emailError || 'unknown');
         }
       } catch (emailErr) {
+        emailError = emailErr.message;
         console.error('Cleaner email error:', emailErr.message);
       }
     }
@@ -74,9 +78,10 @@ const createCleaner = async (req, res) => {
       email,
       tempPassword,
       emailSent,
+      emailError,
     }, emailSent
       ? 'Cleaner created. Password sent to their email.'
-      : 'Cleaner created. Email not sent — configure SMTP in backend/.env and share the password below.', 201);
+      : 'Cleaner created. Email not sent — share the password below.', 201);
   } catch (error) {
     console.error('Create cleaner error:', error);
     sendError(res, 'Failed to create cleaner', 500);
@@ -133,6 +138,7 @@ const resetCleanerPassword = async (req, res) => {
     const [company] = await pool.query('SELECT company_name FROM companies WHERE tenant_id = ?', [req.tenantId]);
     const companyName = company[0]?.company_name || 'Company';
     let emailSent = false;
+    let emailError = null;
     let emailResult = {};
     try {
       emailResult = await sendCleanerCredentialsEmail({
@@ -143,11 +149,14 @@ const resetCleanerPassword = async (req, res) => {
         isReset: true,
       });
       emailSent = emailResult.emailSent;
+      emailError = emailResult.error || null;
 
       if (!emailSent) {
         console.log(`[Dev] Reset password for ${cleaner[0].email}: ${tempPassword}`);
+        console.error('[Cleaner Email] Reason:', emailError || 'unknown');
       }
     } catch (emailErr) {
+      emailError = emailErr.message;
       console.error('Cleaner reset email error:', emailErr.message);
     }
 
@@ -155,7 +164,8 @@ const resetCleanerPassword = async (req, res) => {
       email: cleaner[0].email,
       tempPassword,
       emailSent,
-    }, emailSent ? 'New password sent to cleaner email' : 'Password reset. Email not sent — configure SMTP and share password below');
+      emailError,
+    }, emailSent ? 'New password sent to cleaner email' : 'Password reset. Email not sent — share password below');
   } catch (error) {
     sendError(res, 'Failed to reset password', 500);
   }

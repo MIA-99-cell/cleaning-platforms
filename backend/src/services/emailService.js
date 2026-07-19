@@ -15,10 +15,19 @@ const isSmtpConfigured = () => {
 const getTransporter = () => {
   if (!transporter && isSmtpConfigured()) {
     const { host, user, pass, port } = config.email;
+    // Short timeouts so Render can fall back quickly when Gmail SMTP is blocked.
+    const timeouts = {
+      connectionTimeout: 8000,
+      greetingTimeout: 8000,
+      socketTimeout: 10000,
+    };
     if (host === 'smtp.gmail.com' || host?.includes('gmail')) {
       transporter = nodemailer.createTransport({
-        service: 'gmail',
+        host: 'smtp.gmail.com',
+        port: port || 587,
+        secure: port === 465,
         auth: { user, pass },
+        ...timeouts,
       });
     } else {
       transporter = nodemailer.createTransport({
@@ -26,14 +35,29 @@ const getTransporter = () => {
         port,
         secure: port === 465,
         auth: { user, pass },
+        ...timeouts,
       });
     }
   }
   return isSmtpConfigured() ? transporter : null;
 };
 
+const isResendConfigured = () => !!(
+  config.email.resendApiKey
+  && !String(config.email.resendApiKey).includes('your-')
+);
+
+/** Resend cannot send from a random Gmail address unless the domain is verified. */
+const getResendFrom = () => {
+  const from = config.email.from || '';
+  if (/@gmail\.com>?$/i.test(from) || /@googlemail\.com>?$/i.test(from)) {
+    return 'Mycleaning <onboarding@resend.dev>';
+  }
+  return from || 'Mycleaning <onboarding@resend.dev>';
+};
+
 const sendViaResend = async ({ to, subject, html, text }) => {
-  if (!config.email.resendApiKey) return { success: false, error: 'resend_not_configured' };
+  if (!isResendConfigured()) return { success: false, error: 'resend_not_configured' };
   try {
     const res = await fetch('https://api.resend.com/emails', {
       method: 'POST',
@@ -42,7 +66,7 @@ const sendViaResend = async ({ to, subject, html, text }) => {
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        from: config.email.from,
+        from: getResendFrom(),
         to: [to],
         subject,
         html,
@@ -80,21 +104,37 @@ const sendEmail = async ({ to, subject, html, text }) => {
   }
 };
 
-/** Sends a real email with custom content (password, etc.). Requires SMTP or Resend. */
+/** Sends a real email. Prefer Resend on cloud hosts where Gmail SMTP often times out. */
 const sendTransactionalEmail = async ({ to, subject, html, text }) => {
+  // Resend uses HTTPS, so it works on Render. Try it first when configured.
+  if (isResendConfigured()) {
+    const resendResult = await sendViaResend({ to, subject, html, text });
+    if (resendResult.success) return resendResult;
+    console.error('[Email] Resend failed:', resendResult.error);
+  }
+
   const smtpResult = await sendEmail({ to, subject, html, text });
   if (smtpResult.success && !smtpResult.dev) return smtpResult;
 
-  const resendResult = await sendViaResend({ to, subject, html, text });
-  if (resendResult.success) return resendResult;
-
-  if (smtpResult.dev) {
-    console.error('[Email] Not configured. Set SMTP_USER + SMTP_PASS or RESEND_API_KEY in backend/.env');
+  if (!isResendConfigured() && smtpResult.dev) {
+    console.error('[Email] Not configured. Set RESEND_API_KEY (recommended on Render) or SMTP_USER + SMTP_PASS');
   }
+
+  // If SMTP timed out/failed and Resend was not tried yet, try now.
+  if (!isResendConfigured()) {
+    // already handled above when configured
+  } else if (!smtpResult.success) {
+    // Resend already failed above; keep that error if more specific
+  }
+
   return {
     success: false,
-    error: smtpResult.error || resendResult.error || 'email_not_configured',
+    error: smtpResult.error
+      || (isResendConfigured() ? 'resend_and_smtp_failed' : 'email_not_configured'),
     dev: smtpResult.dev,
+    hint: smtpResult.error && /timeout|ETIMEDOUT|ECONNREFUSED/i.test(smtpResult.error)
+      ? 'Gmail SMTP is blocked/unreachable from Render. Use RESEND_API_KEY or Brevo SMTP instead.'
+      : undefined,
   };
 };
 
@@ -360,17 +400,41 @@ const emailTemplates = {
   }),
 };
 
-/** Checks whether Gmail actually accepts the configured credentials. */
+/** Checks whether email providers are usable from this server. */
 const verifySmtp = async () => {
-  if (!isSmtpConfigured()) {
-    return { configured: false, verified: false, error: 'SMTP settings missing' };
+  const result = {
+    smtpConfigured: isSmtpConfigured(),
+    smtpVerified: false,
+    resendConfigured: isResendConfigured(),
+    recommended: null,
+    error: null,
+    hint: null,
+  };
+
+  if (result.resendConfigured) {
+    result.recommended = 'resend';
+    result.hint = 'RESEND_API_KEY is set. Live emails should use Resend (HTTPS), not Gmail SMTP.';
+    return { configured: true, verified: true, ...result };
   }
+
+  if (!result.smtpConfigured) {
+    result.error = 'SMTP settings missing and RESEND_API_KEY not set';
+    result.hint = 'On Render, Gmail SMTP often times out. Add RESEND_API_KEY, or use Brevo SMTP.';
+    return { configured: false, verified: false, ...result };
+  }
+
   try {
     const transport = getTransporter();
     await transport.verify();
-    return { configured: true, verified: true };
+    result.smtpVerified = true;
+    result.recommended = 'smtp';
+    return { configured: true, verified: true, ...result };
   } catch (error) {
-    return { configured: true, verified: false, error: error.message };
+    result.error = error.message;
+    result.hint = /timeout|ETIMEDOUT|ECONNREFUSED/i.test(error.message || '')
+      ? 'Gmail SMTP cannot connect from Render (connection timeout). Add RESEND_API_KEY in Render Environment, or switch SMTP to Brevo.'
+      : 'SMTP credentials were rejected. Check SMTP_USER / SMTP_PASS.';
+    return { configured: true, verified: false, ...result };
   }
 };
 
@@ -380,5 +444,6 @@ module.exports = {
   sendNotificationEmail,
   emailTemplates,
   isSmtpConfigured,
+  isResendConfigured,
   verifySmtp,
 };
