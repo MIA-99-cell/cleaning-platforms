@@ -32,6 +32,22 @@ const USER_TABLES = {
   customer: { table: 'customers', role: 'customer' },
 };
 
+const notifyTenantApprovalNeeded = async (tenant, approvalToken) => {
+  const [company] = await pool.query(
+    'SELECT company_name, license_number FROM companies WHERE tenant_id = ?',
+    [tenant.id]
+  );
+  return notifySuperAdminsApprovalNeeded({
+    tenantId: tenant.id,
+    companyName: company[0]?.company_name || tenant.full_name,
+    contactName: tenant.full_name,
+    email: tenant.email,
+    licenseNumber: company[0]?.license_number || 'N/A',
+    phone: tenant.phone,
+    approvalToken,
+  });
+};
+
 const findUser = async (userType, email) => {
   const tableConfig = USER_TABLES[userType];
   if (!tableConfig) return null;
@@ -250,19 +266,7 @@ const verifyEmail = async (req, res) => {
             [approvalToken, approvalExpires, tenant.id]
           );
         }
-        const [company] = await pool.query(
-          'SELECT company_name, license_number FROM companies WHERE tenant_id = ?',
-          [tenant.id]
-        );
-        await notifySuperAdminsApprovalNeeded({
-          tenantId: tenant.id,
-          companyName: company[0]?.company_name || tenant.full_name,
-          contactName: tenant.full_name,
-          email: tenant.email,
-          licenseNumber: company[0]?.license_number || 'N/A',
-          phone: tenant.phone,
-          approvalToken: tenant.admin_approval_token || approvalToken,
-        });
+        await notifyTenantApprovalNeeded(tenant, tenant.admin_approval_token || approvalToken);
         return sendSuccess(res, { alreadyVerified: true }, 'Email already verified. Admin has been re-notified to approve your account.');
       }
       return sendSuccess(res, { alreadyVerified: true }, 'Email is already verified. You can log in once your account is approved.');
@@ -280,20 +284,7 @@ const verifyEmail = async (req, res) => {
       [approvalToken, approvalExpires, tenant.id]
     );
 
-    const [company] = await pool.query(
-      'SELECT company_name, license_number FROM companies WHERE tenant_id = ?',
-      [tenant.id]
-    );
-
-    const notifyResult = await notifySuperAdminsApprovalNeeded({
-      tenantId: tenant.id,
-      companyName: company[0]?.company_name || tenant.full_name,
-      contactName: tenant.full_name,
-      email: tenant.email,
-      licenseNumber: company[0]?.license_number || 'N/A',
-      phone: tenant.phone,
-      approvalToken,
-    });
+    const notifyResult = await notifyTenantApprovalNeeded(tenant, approvalToken);
 
     const isDev = process.env.NODE_ENV !== 'production';
     sendSuccess(res, {
@@ -326,20 +317,7 @@ const verifyEmailByAddress = async (req, res) => {
       [approvalToken, approvalExpires, tenant.id]
     );
 
-    const [company] = await pool.query(
-      'SELECT company_name, license_number FROM companies WHERE tenant_id = ?',
-      [tenant.id]
-    );
-
-    await notifySuperAdminsApprovalNeeded({
-      tenantId: tenant.id,
-      companyName: company[0]?.company_name || tenant.full_name,
-      contactName: tenant.full_name,
-      email: tenant.email,
-      licenseNumber: company[0]?.license_number || 'N/A',
-      phone: tenant.phone,
-      approvalToken,
-    });
+    await notifyTenantApprovalNeeded(tenant, approvalToken);
 
     return sendSuccess(res, null, 'Email verified and admin notified for approval.');
   } catch (error) {
