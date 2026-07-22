@@ -29,13 +29,7 @@ const navItems = {
     { path: '/cleaner/jobs', label: 'My Jobs' },
     { path: '/cleaner/profile', label: 'Profile' },
   ],
-  customer: [
-    { path: '/customer', label: 'Dashboard' },
-    { path: '/customer/browse', label: 'Browse Services' },
-    { path: '/customer/marketplace', label: 'Marketplace' },
-    { path: '/customer/bookings', label: 'My Bookings' },
-    { path: '/customer/payments', label: 'Payments' },
-  ],
+  customer: [],
 };
 
 const Layout = ({ children }) => {

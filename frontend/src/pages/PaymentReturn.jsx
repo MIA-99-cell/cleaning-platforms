@@ -38,8 +38,8 @@ const PaymentReturn = () => {
         {!loading && error && (
           <>
             <p style={{ color: 'var(--danger, #c0392b)' }}>{error}</p>
-            <Link to="/customer" className="btn btn-outline" style={{ marginTop: '1rem', display: 'inline-block' }}>
-              Go to Dashboard
+            <Link to="/" className="btn btn-outline" style={{ marginTop: '1rem', display: 'inline-block' }}>
+              Back to Home
             </Link>
           </>
         )}
@@ -66,8 +66,8 @@ const PaymentReturn = () => {
                 : 'Payment is still pending. If you approved on your phone, wait a moment and refresh.'}
             </p>
             <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
-              <Link to="/customer/bookings" className="btn btn-primary">My Bookings</Link>
-              <Link to="/customer/marketplace" className="btn btn-outline">Marketplace</Link>
+              <Link to="/" className="btn btn-primary">Back to Home</Link>
+              <Link to="/#marketplace" className="btn btn-outline">Marketplace</Link>
             </div>
           </>
         )}

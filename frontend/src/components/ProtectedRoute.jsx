@@ -15,7 +15,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   if (!user) return <Navigate to="/login" replace />;
 
   if (allowedRoles && !allowedRoles.includes(user.role)) {
-    const dashboards = { super_admin: '/super-admin', tenant: '/tenant', cleaner: '/cleaner', customer: '/customer' };
+    const dashboards = { super_admin: '/super-admin', tenant: '/tenant', cleaner: '/cleaner', customer: '/' };
     return <Navigate to={dashboards[user.role] || '/'} replace />;
   }
 
@@ -24,7 +24,7 @@ const ProtectedRoute = ({ children, allowedRoles }) => {
   }
 
   if (!user.mustChangePassword && window.location.pathname.includes('/change-password')) {
-    const dashboards = { super_admin: '/super-admin', tenant: '/tenant', cleaner: '/cleaner', customer: '/customer' };
+    const dashboards = { super_admin: '/super-admin', tenant: '/tenant', cleaner: '/cleaner', customer: '/' };
     return <Navigate to={dashboards[user.role] || '/'} replace />;
   }
 

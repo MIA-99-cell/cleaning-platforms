@@ -6,17 +6,20 @@ import { useAuth } from '../contexts/AuthContext';
 import PaymentModal from '../components/PaymentModal';
 import MarketplaceSection from '../components/MarketplaceSection';
 import ServiceBookingModal from '../components/ServiceBookingModal';
+import CustomerBookingsSection from '../components/CustomerBookingsSection';
 import toast from 'react-hot-toast';
 import './Landing.css';
 
 const Landing = () => {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const navigate = useNavigate();
+  const isCustomer = user?.role === 'customer';
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
   const [selectedService, setSelectedService] = useState(null);
   const [showBooking, setShowBooking] = useState(false);
   const [payBooking, setPayBooking] = useState(null);
+  const [bookingsRefresh, setBookingsRefresh] = useState(0);
   const [bookingForm, setBookingForm] = useState({
     service_id: '',
     scheduled_date: '',
@@ -72,46 +75,75 @@ const Landing = () => {
         company_name: selectedService?.company_name,
         total_amount: selectedService?.price,
       });
+      setBookingsRefresh((k) => k + 1);
       toast.success('Booking created. Complete payment now.');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Booking failed');
     }
   };
 
+  const handleLogout = () => {
+    logout();
+    navigate('/login');
+  };
+
   return (
     <div className="landing">
-      <PaymentModal booking={payBooking} onClose={() => setPayBooking(null)} />
+      <PaymentModal
+        booking={payBooking}
+        onClose={() => setPayBooking(null)}
+        onSuccess={() => setBookingsRefresh((k) => k + 1)}
+      />
       <header className="landing-header">
         <h1>CleanPro</h1>
-        <div>
-          <Link to="/login" className="btn btn-outline">Sign In</Link>
-          <Link to="/register" className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Get Started</Link>
+        <div className="landing-header-actions">
+          {isCustomer ? (
+            <>
+              <span className="landing-user-name">Hello, {user.name}</span>
+              <button type="button" className="btn btn-outline" onClick={handleLogout}>Logout</button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="btn btn-outline">Sign In</Link>
+              <Link to="/register" className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Get Started</Link>
+            </>
+          )}
         </div>
       </header>
 
       <section className="landing-hero">
-        <h2>Multi-Tenant Cleaning Platform</h2>
-        <p>Manage your cleaning business, assign jobs to cleaners, and let customers book services online.</p>
-        <div className="landing-actions">
-          <Link to="/register" className="btn btn-primary btn-lg">Register Your Company</Link>
-          <Link to="/login" className="btn btn-outline btn-lg">Customer Login</Link>
-        </div>
+        <h2>{isCustomer ? 'Welcome back' : 'Multi-Tenant Cleaning Platform'}</h2>
+        <p>
+          {isCustomer
+            ? 'Book services, shop products, pay online, and track your bookings — all on this page.'
+            : 'Manage your cleaning business, assign jobs to cleaners, and let customers book services online.'}
+        </p>
+        {!isCustomer && (
+          <div className="landing-actions">
+            <Link to="/register" className="btn btn-primary btn-lg">Register Your Company</Link>
+            <Link to="/login" className="btn btn-outline btn-lg">Customer Login</Link>
+          </div>
+        )}
       </section>
 
-      <section className="landing-features">
-        <div className="feature-card">
-          <h3>For Companies</h3>
-          <p>Manage services, cleaners, bookings, payments, and reports all in one place.</p>
-        </div>
-        <div className="feature-card">
-          <h3>For Cleaners</h3>
-          <p>View assigned jobs, update status, and complete work with photo evidence.</p>
-        </div>
-        <div className="feature-card">
-          <h3>For Customers</h3>
-          <p>Browse services, shop cleaning products, book cleanings, pay online, and leave reviews.</p>
-        </div>
-      </section>
+      {isCustomer && <CustomerBookingsSection refreshKey={bookingsRefresh} />}
+
+      {!isCustomer && (
+        <section className="landing-features">
+          <div className="feature-card">
+            <h3>For Companies</h3>
+            <p>Manage services, cleaners, bookings, payments, and reports all in one place.</p>
+          </div>
+          <div className="feature-card">
+            <h3>For Cleaners</h3>
+            <p>View assigned jobs, update status, and complete work with photo evidence.</p>
+          </div>
+          <div className="feature-card">
+            <h3>For Customers</h3>
+            <p>Browse services, shop cleaning products, book cleanings, pay online, and leave reviews.</p>
+          </div>
+        </section>
+      )}
 
       <MarketplaceSection limit={12} showCart />
 

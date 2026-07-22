@@ -2,7 +2,7 @@ const ServiceBookingModal = ({ service, bookingForm, setBookingForm, onSubmit, o
   const update = (field) => (e) => setBookingForm({ ...bookingForm, [field]: e.target.value });
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
+    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, padding: '1rem' }}>
       <div className="card" style={{ width: '100%', maxWidth: 450 }}>
         <h2 style={{ marginBottom: service ? '0.35rem' : '1rem' }}>Book Service</h2>
         {service && (
