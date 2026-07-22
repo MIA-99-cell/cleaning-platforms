@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
+const { logError } = require('../utils/logger');
 const { paginate } = require('../utils/auth');
 const { sendCleanerJobAssignmentEmail } = require('../services/cleanerEmailService');
 const { notifyServiceBookingPlaced, notifyServiceCompleted } = require('../services/bookingNotificationService');
@@ -37,6 +38,7 @@ const getBookings = async (req, res) => {
 
     sendPaginated(res, bookings, { page: p, limit: lim, total });
   } catch (error) {
+    logError('booking.getBookings', error);
     sendError(res, 'Failed to fetch bookings', 500);
   }
 };
@@ -124,6 +126,7 @@ const updateBookingStatus = async (req, res) => {
 
     sendSuccess(res, null, `Booking ${action}ed successfully`);
   } catch (error) {
+    logError('booking.updateBooking', error);
     sendError(res, 'Failed to update booking', 500);
   }
 };
@@ -201,6 +204,7 @@ const getCleanerJobs = async (req, res) => {
 
     sendSuccess(res, jobs);
   } catch (error) {
+    logError('booking.getJobs', error);
     sendError(res, 'Failed to fetch jobs', 500);
   }
 };
@@ -252,6 +256,7 @@ const updateJobStatus = async (req, res) => {
 
     sendSuccess(res, null, 'Job status updated');
   } catch (error) {
+    logError('booking.updateJob', error);
     sendError(res, 'Failed to update job', 500);
   }
 };

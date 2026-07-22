@@ -1,5 +1,13 @@
 const pool = require('../config/database');
 
+const logError = (context, error) => {
+  if (error instanceof Error) {
+    console.error(`[${context}]`, error.stack || error.message);
+  } else {
+    console.error(`[${context}]`, error);
+  }
+};
+
 const logActivity = async ({
   tenantId = null,
   userType,
@@ -36,4 +44,4 @@ const logActivity = async ({
   }
 };
 
-module.exports = { logActivity };
+module.exports = { logActivity, logError };

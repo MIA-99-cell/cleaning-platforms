@@ -2,6 +2,7 @@ const pool = require('../config/database');
 const { hashPassword, generateRandomPassword } = require('../utils/auth');
 const { sendCleanerCredentialsEmail } = require('../services/cleanerEmailService');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
+const { logError } = require('../utils/logger');
 const { paginate } = require('../utils/auth');
 const { storeUploadedFile } = require('../services/storageService');
 
@@ -24,6 +25,7 @@ const getCleaners = async (req, res) => {
 
     sendPaginated(res, cleaners, { page: p, limit: lim, total });
   } catch (error) {
+    logError('cleaner.getCleaners', error);
     sendError(res, 'Failed to fetch cleaners', 500);
   }
 };
@@ -109,6 +111,7 @@ const updateCleaner = async (req, res) => {
 
     sendSuccess(res, null, 'Cleaner updated');
   } catch (error) {
+    logError('cleaner.updateCleaner', error);
     sendError(res, 'Failed to update cleaner', 500);
   }
 };
@@ -118,6 +121,7 @@ const deleteCleaner = async (req, res) => {
     await pool.query('DELETE FROM cleaners WHERE id = ? AND tenant_id = ?', [req.params.id, req.tenantId]);
     sendSuccess(res, null, 'Cleaner deleted');
   } catch (error) {
+    logError('cleaner.deleteCleaner', error);
     sendError(res, 'Failed to delete cleaner', 500);
   }
 };
@@ -168,6 +172,7 @@ const resetCleanerPassword = async (req, res) => {
       emailError,
     }, emailSent ? 'New password sent to cleaner email' : 'Password reset. Email not sent — share password below');
   } catch (error) {
+    logError('cleaner.resetPassword', error);
     sendError(res, 'Failed to reset password', 500);
   }
 };

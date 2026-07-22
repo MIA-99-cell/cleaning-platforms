@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { logError } = require('../utils/logger');
 const ExcelJS = require('exceljs');
 const PDFDocument = require('pdfkit');
 
@@ -100,7 +101,7 @@ const generateReport = async (req, res) => {
     const data = await getReportData(tenantId, reportType, startDate, endDate);
     sendSuccess(res, data);
   } catch (error) {
-    console.error('generateReport error:', error.message);
+    logError('report.generateReport', error);
     sendError(res, 'Failed to generate report', 500);
   }
 };
@@ -124,7 +125,12 @@ const exportExcel = async (req, res) => {
     await workbook.xlsx.write(res);
     res.end();
   } catch (error) {
-    sendError(res, 'Failed to export Excel', 500);
+    logError('report.exportExcel', error);
+    if (res.headersSent) {
+      res.destroy(error);
+    } else {
+      sendError(res, 'Failed to export Excel', 500);
+    }
   }
 };
 
@@ -149,7 +155,12 @@ const exportPDF = async (req, res) => {
 
     doc.end();
   } catch (error) {
-    sendError(res, 'Failed to export PDF', 500);
+    logError('report.exportPDF', error);
+    if (res.headersSent) {
+      res.destroy(error);
+    } else {
+      sendError(res, 'Failed to export PDF', 500);
+    }
   }
 };
 

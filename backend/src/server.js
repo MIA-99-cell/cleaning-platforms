@@ -13,6 +13,7 @@ const customerRoutes = require('./routes/customer');
 const notificationRoutes = require('./routes/notifications');
 const flutterwaveRoutes = require('./routes/flutterwave');
 const flutterwaveController = require('./controllers/flutterwaveController');
+const { logError } = require('./utils/logger');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -116,7 +117,10 @@ app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments/flutterwave', flutterwaveRoutes);
 
 app.use((err, req, res, next) => {
-  console.error('Error:', err.message);
+  logError(`unhandled ${req.method} ${req.originalUrl}`, err);
+  if (res.headersSent) {
+    return next(err);
+  }
   if (err.code === 'LIMIT_FILE_SIZE') {
     return res.status(400).json({ success: false, message: 'File too large' });
   }

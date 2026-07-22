@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
-const { logActivity } = require('../utils/logger');
+const { logActivity, logError } = require('../utils/logger');
 
 const getDashboard = async (req, res) => {
   try {
@@ -82,6 +82,7 @@ const getCompanies = async (req, res) => {
 
     sendPaginated(res, companies, { page: p, limit: lim, total });
   } catch (error) {
+    logError('superAdmin.getCompanies', error);
     sendError(res, 'Failed to fetch companies', 500);
   }
 };
@@ -118,6 +119,7 @@ const updateCompanyStatus = async (req, res) => {
 
     sendSuccess(res, null, `Company ${status} successfully`);
   } catch (error) {
+    logError('superAdmin.updateCompanyStatus', error);
     sendError(res, 'Failed to update company status', 500);
   }
 };
@@ -138,6 +140,7 @@ const deleteCompany = async (req, res) => {
 
     sendSuccess(res, null, 'Company deleted successfully');
   } catch (error) {
+    logError('superAdmin.deleteCompany', error);
     sendError(res, 'Failed to delete company', 500);
   }
 };

@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { logError } = require('../utils/logger');
 
 const searchCompanies = async (req, res) => {
   try {
@@ -28,6 +29,7 @@ const searchCompanies = async (req, res) => {
 
     sendSuccess(res, companies);
   } catch (error) {
+    logError('search.searchCompanies', error);
     sendError(res, 'Search failed', 500);
   }
 };
@@ -55,6 +57,7 @@ const searchServices = async (req, res) => {
 
     sendSuccess(res, services);
   } catch (error) {
+    logError('search.searchServices', error);
     sendError(res, 'Search failed', 500);
   }
 };
@@ -107,6 +110,7 @@ const getCleanerDashboard = async (req, res) => {
 
     sendSuccess(res, stats);
   } catch (error) {
+    logError('search.getCleanerDashboard', error);
     sendError(res, 'Failed to load dashboard', 500);
   }
 };
