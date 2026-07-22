@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { logError } = require('../utils/logger');
 const { notifyTenantNewReview } = require('../services/productOrderNotificationService');
 
 const createReview = async (req, res) => {
@@ -48,6 +49,7 @@ const createReview = async (req, res) => {
 
     sendSuccess(res, null, 'Review submitted', 201);
   } catch (error) {
+    logError('review.submitReview', error);
     sendError(res, 'Failed to submit review', 500);
   }
 };
@@ -65,6 +67,7 @@ const getReviews = async (req, res) => {
     );
     sendSuccess(res, reviews);
   } catch (error) {
+    logError('review.getReviews', error);
     sendError(res, 'Failed to fetch reviews', 500);
   }
 };
@@ -81,6 +84,7 @@ const replyToReview = async (req, res) => {
 
     sendSuccess(res, null, 'Reply added');
   } catch (error) {
+    logError('review.reply', error);
     sendError(res, 'Failed to reply', 500);
   }
 };
@@ -90,6 +94,7 @@ const deleteReview = async (req, res) => {
     await pool.query('UPDATE reviews SET is_visible = FALSE WHERE id = ? AND tenant_id = ?', [req.params.id, req.tenantId]);
     sendSuccess(res, null, 'Review hidden');
   } catch (error) {
+    logError('review.deleteReview', error);
     sendError(res, 'Failed to delete review', 500);
   }
 };

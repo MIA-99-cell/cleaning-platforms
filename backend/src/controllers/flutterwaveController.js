@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { v4: uuidv4 } = require('uuid');
 const { sendSuccess, sendError } = require('../utils/response');
+const { logError } = require('../utils/logger');
 const { DB_CONFIRMED, PENDING_OR_CONFIRMED_DB } = require('../utils/paymentStatus');
 const {
   createDirectCharge,
@@ -300,7 +301,8 @@ const verifyPayment = async (req, res) => {
     try {
       const verified = await verifyCharge(chargeId);
       charge = verified.data;
-    } catch {
+    } catch (verifyError) {
+      logError('flutterwave.verifyPayment.verifyCharge', verifyError);
       return sendError(res, 'Unable to verify payment', 502);
     }
 
@@ -355,8 +357,10 @@ const handleWebhook = async (req, res) => {
     await processSuccessfulCharge(verifiedCharge);
     return res.status(200).json({ success: true });
   } catch (error) {
-    console.error('handleWebhook error:', error.message);
-    return res.status(200).json({ success: true });
+    logError('flutterwave.handleWebhook', error);
+    // Return 500 so Flutterwave retries the webhook instead of silently
+    // dropping a payment we failed to record.
+    return res.status(500).json({ success: false, message: 'Webhook processing failed' });
   }
 };
 

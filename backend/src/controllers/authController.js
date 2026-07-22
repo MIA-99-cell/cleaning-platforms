@@ -15,7 +15,7 @@ const {
   verifySupabaseAccessToken,
   isSupabaseConfigured,
 } = require('../services/supabaseService');
-const { logActivity } = require('../utils/logger');
+const { logActivity, logError } = require('../utils/logger');
 const { sendSuccess, sendError } = require('../utils/response');
 const { isTruthy } = require('../utils/pgCompat');
 const { v4: uuidv4 } = require('uuid');
@@ -115,6 +115,7 @@ const login = async (req, res) => {
 
 const registerTenant = async (req, res) => {
   const connection = await pool.getConnection();
+  let committed = false;
   try {
     const { email, password, full_name, phone, company_name, license_number, address } = req.body;
 
@@ -146,6 +147,7 @@ const registerTenant = async (req, res) => {
     );
 
     await connection.commit();
+    committed = true;
 
     const useSupabaseEmail = config.supabase.useEmail && isSupabaseConfigured();
     const verifyUrl = `${config.frontendUrl}/verify-email?token=${verificationToken}`;
@@ -172,13 +174,17 @@ const registerTenant = async (req, res) => {
       console.log(`[Dev] Email verification link for ${email}: ${verifyUrl}`);
     }
 
-    await notifySuperAdminsNewRegistration({
-      companyName: company_name,
-      contactName: full_name,
-      email,
-      licenseNumber: license_number,
-      phone,
-    });
+    try {
+      await notifySuperAdminsNewRegistration({
+        companyName: company_name,
+        contactName: full_name,
+        email,
+        licenseNumber: license_number,
+        phone,
+      });
+    } catch (notifyError) {
+      logError('auth.registerTenant.notifySuperAdmins', notifyError);
+    }
 
     sendSuccess(res, {
       id: result.insertId,
@@ -187,8 +193,8 @@ const registerTenant = async (req, res) => {
       ? 'Registration successful. Please verify your email.'
       : 'Registration successful. Check console/server for verification link.', 201);
   } catch (error) {
-    await connection.rollback();
-    console.error('Tenant registration error:', error);
+    if (!committed) await connection.rollback();
+    logError('auth.registerTenant', error);
     sendError(res, 'Registration failed', 500);
   } finally {
     connection.release();
@@ -438,6 +444,7 @@ const forgotPassword = async (req, res) => {
 
     sendSuccess(res, null, 'If the email exists, a reset link has been sent');
   } catch (error) {
+    logError('auth.forgotPassword', error);
     sendError(res, 'Request failed', 500);
   }
 };
@@ -465,6 +472,7 @@ const resetPassword = async (req, res) => {
 
     sendSuccess(res, null, 'Password reset successful');
   } catch (error) {
+    logError('auth.resetPassword', error);
     sendError(res, 'Reset failed', 500);
   }
 };
@@ -490,6 +498,7 @@ const changePassword = async (req, res) => {
 
     sendSuccess(res, { mustChangePassword: false }, 'Password changed successfully');
   } catch (error) {
+    logError('auth.changePassword', error);
     sendError(res, 'Password change failed', 500);
   }
 };
@@ -514,6 +523,7 @@ const getMe = async (req, res) => {
 
     sendSuccess(res, user);
   } catch (error) {
+    logError('auth.getMe', error);
     sendError(res, 'Failed to fetch profile', 500);
   }
 };

@@ -1,7 +1,7 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
-const { logActivity } = require('../utils/logger');
+const { logActivity, logError } = require('../utils/logger');
 const { storeUploadedFile } = require('../services/storageService');
 
 const getDashboard = async (req, res) => {
@@ -46,6 +46,7 @@ const getDashboard = async (req, res) => {
       recentReviews,
     });
   } catch (error) {
+    logError('tenant.getDashboard', error);
     sendError(res, 'Failed to load dashboard', 500);
   }
 };
@@ -55,6 +56,7 @@ const getCompanyProfile = async (req, res) => {
     const [rows] = await pool.query('SELECT * FROM companies WHERE tenant_id = ?', [req.tenantId]);
     sendSuccess(res, rows[0] || null);
   } catch (error) {
+    logError('tenant.getCompanyProfile', error);
     sendError(res, 'Failed to fetch company profile', 500);
   }
 };
@@ -98,6 +100,7 @@ const updateCompanyProfile = async (req, res) => {
 
     sendSuccess(res, null, 'Company profile updated');
   } catch (error) {
+    logError('tenant.updateCompanyProfile', error);
     sendError(res, 'Failed to update company profile', 500);
   }
 };
@@ -108,6 +111,7 @@ const getServices = async (req, res) => {
     const [services] = await pool.query('SELECT * FROM services WHERE tenant_id = ? ORDER BY created_at DESC', [req.tenantId]);
     sendSuccess(res, services);
   } catch (error) {
+    logError('tenant.getServices', error);
     sendError(res, 'Failed to fetch services', 500);
   }
 };
@@ -124,6 +128,7 @@ const createService = async (req, res) => {
 
     sendSuccess(res, { id: result.insertId }, 'Service created', 201);
   } catch (error) {
+    logError('tenant.createService', error);
     sendError(res, 'Failed to create service', 500);
   }
 };
@@ -148,6 +153,7 @@ const updateService = async (req, res) => {
 
     sendSuccess(res, null, 'Service updated');
   } catch (error) {
+    logError('tenant.updateService', error);
     sendError(res, 'Failed to update service', 500);
   }
 };
@@ -157,6 +163,7 @@ const deleteService = async (req, res) => {
     await pool.query('DELETE FROM services WHERE id = ? AND tenant_id = ?', [req.params.id, req.tenantId]);
     sendSuccess(res, null, 'Service deleted');
   } catch (error) {
+    logError('tenant.deleteService', error);
     sendError(res, 'Failed to delete service', 500);
   }
 };
@@ -176,6 +183,7 @@ const getCustomers = async (req, res) => {
     );
     sendSuccess(res, customers);
   } catch (error) {
+    logError('tenant.getCustomers', error);
     sendError(res, 'Failed to fetch customers', 500);
   }
 };
@@ -201,6 +209,7 @@ const toggleCustomerBlacklist = async (req, res) => {
 
     sendSuccess(res, null, is_blacklisted ? 'Customer blacklisted' : 'Customer removed from blacklist');
   } catch (error) {
+    logError('tenant.toggleCustomerBlacklist', error);
     sendError(res, 'Failed to update customer', 500);
   }
 };

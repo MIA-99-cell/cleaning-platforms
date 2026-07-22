@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { logError } = require('../utils/logger');
 
 const getNotifications = async (req, res) => {
   try {
@@ -17,6 +18,7 @@ const getNotifications = async (req, res) => {
 
     sendSuccess(res, notifications);
   } catch (error) {
+    logError('notification.getNotifications', error);
     sendError(res, 'Failed to fetch notifications', 500);
   }
 };
@@ -26,6 +28,7 @@ const markAsRead = async (req, res) => {
     await pool.query('UPDATE notifications SET is_read = TRUE WHERE id = ?', [req.params.id]);
     sendSuccess(res, null, 'Marked as read');
   } catch (error) {
+    logError('notification.markAsRead', error);
     sendError(res, 'Failed to update notification', 500);
   }
 };
@@ -39,6 +42,7 @@ const markAllAsRead = async (req, res) => {
     );
     sendSuccess(res, null, 'All marked as read');
   } catch (error) {
+    logError('notification.markAllAsRead', error);
     sendError(res, 'Failed to update notifications', 500);
   }
 };
