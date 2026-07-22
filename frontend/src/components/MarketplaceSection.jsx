@@ -1,55 +1,47 @@
 import { useEffect, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import api, { resolveAssetUrl } from '../services/api';
 import { formatCFA } from '../utils/currency';
-import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import ProductCheckoutModal from './ProductCheckoutModal';
 import CartPanel from './CartPanel';
 import toast from 'react-hot-toast';
 import './CartPanel.css';
+import useLockBodyScroll from '../hooks/useLockBodyScroll';
 
 const productImage = (url) => (url ? url : null);
 
 const MarketplaceSection = ({ title = 'Cleaning Products Marketplace', limit, showCart = true }) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { addItem } = useCart();
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  useLockBodyScroll(!!selectedProduct);
+
   useEffect(() => {
-    api.get('/customer/products')
-      .then((res) => {
-        const list = Array.isArray(res.data?.data) ? res.data.data : [];
-        setProducts(limit ? list.slice(0, limit) : list);
-      })
-      .catch(() => setProducts([]))
-      .finally(() => setLoading(false));
+    const loadProducts = () => {
+      setLoading(true);
+      api.get('/public/products', { params: { limit: limit || 50 } })
+        .then((res) => {
+          const list = Array.isArray(res.data?.data) ? res.data.data : [];
+          setProducts(limit ? list.slice(0, limit) : list);
+        })
+        .catch(() => setProducts([]))
+        .finally(() => setLoading(false));
+    };
+
+    loadProducts();
+    const onFocus = () => loadProducts();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
   }, [limit]);
 
-  const requireCustomer = () => {
-    if (!user) {
-      toast('Please sign in as a customer to shop.', { icon: 'ℹ️' });
-      navigate('/login');
-      return false;
-    }
-    if (user.role !== 'customer') {
-      toast.error('Only customer accounts can purchase products.');
-      return false;
-    }
-    return true;
-  };
-
   const handleAddToCart = (product) => {
-    if (!requireCustomer()) return;
     addItem(product, 1);
     toast.success(`${product.name} added to cart`);
   };
 
   const handleBuyNow = (product) => {
-    if (!requireCustomer()) return;
     setSelectedProduct(product);
   };
 
@@ -57,7 +49,7 @@ const MarketplaceSection = ({ title = 'Cleaning Products Marketplace', limit, sh
     <section id="marketplace" className="landing-marketplace">
       <div className="landing-services-header">
         <h3>{title}</h3>
-        <p>Shop cleaning supplies from verified companies. Add to cart or buy now. Pay on delivery or via Mobile Money.</p>
+        <p>Shop cleaning supplies from verified companies. No account needed — add to cart or buy now.</p>
       </div>
 
       {loading ? (

@@ -6,6 +6,7 @@ const {
   normalizePayments,
   PENDING_OR_CONFIRMED_DB,
 } = require('../utils/paymentStatus');
+const { recordBookingPaymentCommission } = require('../services/platformCommissionService');
 
 const getPayments = async (req, res) => {
   try {
@@ -100,6 +101,11 @@ const confirmPayment = async (req, res) => {
        VALUES (?, ?, ?, ?, ?, 'paid', NOW())`,
       [req.tenantId, existing[0].booking_id, id, invoiceNumber, existing[0].amount]
     );
+
+    await recordBookingPaymentCommission({
+      ...existing[0],
+      confirmed_at: new Date(),
+    });
 
     sendSuccess(res, null, 'Payment confirmed');
   } catch (error) {

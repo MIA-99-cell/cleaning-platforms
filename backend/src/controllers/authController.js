@@ -6,7 +6,7 @@ const {
   generateResetToken,
   generateRandomPassword,
 } = require('../utils/auth');
-const { sendEmail, sendNotificationEmail, emailTemplates } = require('../services/emailService');
+const { sendEmail, sendCompanyApprovalEmail, emailTemplates } = require('../services/emailService');
 const { notifySuperAdminsNewRegistration, notifySuperAdminsApprovalNeeded } = require('../services/notificationService');
 const {
   provisionSupabaseAuthUser,
@@ -49,6 +49,10 @@ const findUser = async (userType, email) => {
 const login = async (req, res) => {
   try {
     const { email, password, userType } = req.body;
+
+    if (userType === 'customer') {
+      return sendError(res, 'Customer accounts are not available. Book and shop on the home page without signing in.', 403);
+    }
 
     const user = await findUser(userType, email);
     if (!user) return sendError(res, 'Invalid email or password', 401);
@@ -196,33 +200,7 @@ const registerTenant = async (req, res) => {
 };
 
 const registerCustomer = async (req, res) => {
-  try {
-    const { email, password, full_name, phone, address } = req.body;
-
-    const [existing] = await pool.query('SELECT id FROM customers WHERE email = ?', [email]);
-    if (existing.length) return sendError(res, 'Email already registered', 409);
-
-    const passwordHash = await hashPassword(password);
-
-    const [result] = await pool.query(
-      `INSERT INTO customers (email, password_hash, full_name, phone, address) VALUES (?, ?, ?, ?, ?)`,
-      [email, passwordHash, full_name, phone, address]
-    );
-
-    if (config.supabase.useEmail && isSupabaseConfigured()) {
-      await provisionSupabaseAuthUser({
-        email,
-        password,
-        metadata: { role: 'customer', full_name },
-        redirectTo: `${config.frontendUrl}/verify-email`,
-      });
-    }
-
-    sendSuccess(res, { id: result.insertId }, 'Registration successful', 201);
-  } catch (error) {
-    console.error('Customer registration error:', error);
-    sendError(res, 'Registration failed', 500);
-  }
+  return sendError(res, 'Customer registration is disabled. Book and shop on the home page without an account.', 403);
 };
 
 const verifyEmail = async (req, res) => {
@@ -608,11 +586,10 @@ const approveTenantByToken = async (req, res) => {
       [tenant.id]
     );
 
-    const template = emailTemplates.companyApproval(tenant.company_name || tenant.full_name);
-    await sendNotificationEmail({
-      to: tenant.email,
-      ...template,
-      actionUrl: `${config.frontendUrl}/login`,
+    await sendCompanyApprovalEmail({
+      email: tenant.email,
+      companyName: tenant.company_name || tenant.full_name,
+      contactName: tenant.full_name,
     });
 
     await pool.query(

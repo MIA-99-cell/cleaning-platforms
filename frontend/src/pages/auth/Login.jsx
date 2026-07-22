@@ -7,7 +7,7 @@ import toast from 'react-hot-toast';
 const Login = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
-  const [userType, setUserType] = useState('customer');
+  const [userType, setUserType] = useState('tenant');
   const [loading, setLoading] = useState(false);
   const [showApprovalRequest, setShowApprovalRequest] = useState(false);
   const [requestingApproval, setRequestingApproval] = useState(false);
@@ -66,7 +66,6 @@ const Login = () => {
           <div className="form-group">
             <label>Login As</label>
             <select className="form-control" value={userType} onChange={(e) => setUserType(e.target.value)}>
-              <option value="customer">Customer</option>
               <option value="tenant">Cleaning Company</option>
               <option value="cleaner">Cleaner</option>
               <option value="super_admin">Super Admin</option>

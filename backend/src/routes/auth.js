@@ -7,7 +7,7 @@ const { validate } = require('../middleware/validate');
 router.post('/login', [
   body('email').isEmail(),
   body('password').notEmpty(),
-  body('userType').isIn(['super_admin', 'tenant', 'cleaner', 'customer']),
+  body('userType').isIn(['super_admin', 'tenant', 'cleaner']),
   validate,
 ], authController.login);
 
@@ -47,14 +47,14 @@ router.post('/request-approval', [
 
 router.post('/forgot-password', [
   body('email').isEmail(),
-  body('userType').isIn(['super_admin', 'tenant', 'cleaner', 'customer']),
+  body('userType').isIn(['super_admin', 'tenant', 'cleaner']),
   validate,
 ], authController.forgotPassword);
 
 router.post('/reset-password', [
   body('token').notEmpty(),
   body('password').isLength({ min: 8 }),
-  body('userType').isIn(['super_admin', 'tenant', 'cleaner', 'customer']),
+  body('userType').isIn(['super_admin', 'tenant', 'cleaner']),
   validate,
 ], authController.resetPassword);
 
@@ -63,7 +63,7 @@ router.get('/cleaner-credentials', authController.getCleanerCredentials);
 router.post('/sync-password', [
   body('access_token').notEmpty(),
   body('password').isLength({ min: 8 }),
-  body('userType').isIn(['super_admin', 'tenant', 'cleaner', 'customer']),
+  body('userType').isIn(['super_admin', 'tenant', 'cleaner']),
   validate,
 ], authController.syncPasswordFromSupabase);
 

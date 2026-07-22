@@ -32,6 +32,7 @@ const TenantDashboard = () => {
   const company = data?.company;
   const reviews = data?.recentReviews || [];
   const rating = parseFloat(company?.rating || 0);
+  const commissionRate = ((data?.platform_commission_rate || 0.05) * 100).toFixed(0);
 
   return (
     <div>
@@ -44,13 +45,24 @@ const TenantDashboard = () => {
         </div>
       )}
 
+      <div className="card" style={{ marginBottom: '1.5rem' }}>
+        <h3 style={{ marginBottom: '0.35rem' }}>This Month&apos;s Earnings</h3>
+        <p style={{ color: 'var(--text-muted)', fontSize: '0.875rem', marginBottom: '1rem' }}>
+          CleanPro charges a {commissionRate}% platform fee on confirmed sales ({data?.commission_period || 'current month'}).
+        </p>
+        <div className="stats-grid" style={{ marginBottom: 0 }}>
+          <StatCard title="Gross Sales" value={formatCFA(data?.monthly_gross_sales || 0)} />
+          <StatCard title={`Platform Fee (${commissionRate}%)`} value={formatCFA(data?.monthly_platform_fee || 0)} />
+          <StatCard title="Your Net Earnings" value={formatCFA(data?.monthly_net_earnings || 0)} />
+        </div>
+      </div>
+
       <div className="stats-grid">
         <StatCard title="Today's Jobs" value={data?.todays_jobs} />
         <StatCard title="Pending Jobs" value={data?.pending_jobs} />
         <StatCard title="Completed Jobs" value={data?.completed_jobs} />
         <StatCard title="Cancelled Jobs" value={data?.cancelled_jobs} />
-        <StatCard title="Monthly Revenue" value={formatCFA(data?.monthly_revenue || 0)} />
-        <StatCard title="Today's Revenue" value={formatCFA(data?.todays_revenue || 0)} />
+        <StatCard title="Today's Sales" value={formatCFA(data?.todays_sales || 0)} />
         <StatCard title="Total Customers" value={data?.total_customers} />
         <StatCard title="Total Cleaners" value={data?.total_cleaners} />
         <StatCard title="Customer Rating" value={`${rating.toFixed(1)} ★`} />

@@ -278,7 +278,7 @@ const getCustomerBookings = async (req, res) => {
        JOIN services s ON b.service_id = s.id
        LEFT JOIN companies co ON b.tenant_id = co.tenant_id
        WHERE ${where}
-       ORDER BY b.scheduled_date DESC, b.scheduled_time DESC`,
+       ORDER BY b.created_at DESC, b.id DESC`,
       params
     );
 

@@ -48,6 +48,7 @@ const Reports = () => {
               <option value="revenue">Revenue</option>
               <option value="cleaners">Cleaners</option>
               <option value="customers">Customers</option>
+              <option value="commissions">Platform Commissions</option>
             </select>
           </div>
           <button className="btn btn-primary" onClick={generateReport} disabled={loading}>

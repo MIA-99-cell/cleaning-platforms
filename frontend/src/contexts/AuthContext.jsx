@@ -24,9 +24,16 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem('token');
     const savedUser = localStorage.getItem('user');
     if (token && savedUser) {
-      setUser(JSON.parse(savedUser));
+      const parsed = JSON.parse(savedUser);
+      if (parsed.role === 'customer') {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        setLoading(false);
+        return;
+      }
+      setUser(parsed);
       api.get('/auth/me').then((res) => {
-        setUser({ ...JSON.parse(savedUser), ...res.data.data });
+        setUser({ ...parsed, ...res.data.data });
       }).catch(() => {
         logout();
       }).finally(() => setLoading(false));

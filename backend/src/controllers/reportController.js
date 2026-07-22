@@ -92,10 +92,46 @@ const getReportData = async (tenantId, reportType, startDate, endDate) => {
   }
 };
 
+const getCommissionReportData = async (startDate, endDate) => {
+  const { ensurePlatformCommissionsTable, getCommissionRate } = require('../services/platformCommissionService');
+  await ensurePlatformCommissionsTable();
+
+  let where = '1=1';
+  const params = [];
+  if (startDate && endDate) {
+    where += ' AND pc.created_at BETWEEN ? AND ?';
+    params.push(startDate, endDate);
+  }
+
+  const [rows] = await pool.query(
+    `SELECT pc.period_month, t.email AS tenant_email, c.company_name,
+      pc.source_type, pc.source_id, pc.gross_amount, pc.commission_rate,
+      pc.commission_amount, pc.created_at
+     FROM platform_commissions pc
+     JOIN tenants t ON pc.tenant_id = t.id
+     LEFT JOIN companies c ON c.tenant_id = t.id
+     WHERE ${where}
+     ORDER BY pc.created_at DESC`,
+    params
+  );
+
+  return rows.map((row) => ({
+    ...row,
+    commission_rate_pct: `${(parseFloat(row.commission_rate || getCommissionRate()) * 100).toFixed(1)}%`,
+    gross_amount: parseFloat(row.gross_amount || 0),
+    commission_amount: parseFloat(row.commission_amount || 0),
+  }));
+};
+
 const generateReport = async (req, res) => {
   try {
     const { reportType, startDate, endDate } = req.query;
     const tenantId = req.user.role === 'super_admin' ? req.query.tenant_id : req.tenantId;
+
+    if (reportType === 'commissions' && req.user.role === 'super_admin') {
+      const data = await getCommissionReportData(startDate, endDate);
+      return sendSuccess(res, data);
+    }
 
     const data = await getReportData(tenantId, reportType, startDate, endDate);
     sendSuccess(res, data);

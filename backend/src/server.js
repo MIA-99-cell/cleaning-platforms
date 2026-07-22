@@ -10,6 +10,7 @@ const superAdminRoutes = require('./routes/superAdmin');
 const tenantRoutes = require('./routes/tenant');
 const cleanerRoutes = require('./routes/cleaner');
 const customerRoutes = require('./routes/customer');
+const publicRoutes = require('./routes/public');
 const notificationRoutes = require('./routes/notifications');
 const flutterwaveRoutes = require('./routes/flutterwave');
 const flutterwaveController = require('./controllers/flutterwaveController');
@@ -111,6 +112,7 @@ app.use('/api/auth', authRoutes);
 app.use('/api/super-admin', superAdminRoutes);
 app.use('/api/tenant', tenantRoutes);
 app.use('/api/cleaner', cleanerRoutes);
+app.use('/api/public', publicRoutes);
 app.use('/api/customer', customerRoutes);
 app.use('/api/notifications', notificationRoutes);
 app.use('/api/payments/flutterwave', flutterwaveRoutes);
@@ -133,6 +135,10 @@ app.use((req, res) => {
 const server = app.listen(PORT, () => {
   console.log(`Server running on http://localhost:${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  const { ensurePlatformCommissionsTable, getCommissionRate } = require('./services/platformCommissionService');
+  ensurePlatformCommissionsTable()
+    .then(() => console.log(`Platform commission: ${(getCommissionRate() * 100).toFixed(1)}% (min 5%)`))
+    .catch((err) => console.error('Platform commissions table init failed:', err.message));
 });
 
 server.on('error', (err) => {

@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
 const { storeUploadedFile } = require('../services/storageService');
+const { SQL_IS_ACTIVE } = require('../utils/pgCompat');
 
 const getTenantProducts = async (req, res) => {
   try {
@@ -21,8 +22,8 @@ const createProduct = async (req, res) => {
     const image_url = req.file ? await storeUploadedFile(req.file, 'products') : null;
 
     const [result] = await pool.query(
-      `INSERT INTO products (tenant_id, name, description, price, stock_quantity, image_url)
-       VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO products (tenant_id, name, description, price, stock_quantity, image_url, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
       [req.tenantId, name, description || null, price, stock_quantity || 0, image_url]
     );
 
@@ -108,12 +109,16 @@ const deleteProduct = async (req, res) => {
 
 const listMarketplaceProducts = async (req, res) => {
   try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
     const [products] = await pool.query(
       `SELECT p.*, c.company_name, c.logo_url AS company_logo
        FROM products p
        JOIN companies c ON p.tenant_id = c.tenant_id
-       WHERE p.is_active = TRUE
-       ORDER BY p.created_at DESC`
+       JOIN tenants t ON t.id = p.tenant_id
+       WHERE p.${SQL_IS_ACTIVE} AND t.status = 'approved'
+       ORDER BY p.created_at DESC
+       LIMIT ?`,
+      [limit]
     );
     sendSuccess(res, products);
   } catch (error) {

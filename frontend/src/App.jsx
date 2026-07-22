@@ -37,6 +37,8 @@ import PaymentReturn from './pages/PaymentReturn';
 
 const roleHome = (role) => (role === 'customer' ? '/' : `/${role.replace('_', '-')}`);
 
+const isStaffUser = (user) => user && user.role !== 'customer';
+
 const AppLayout = ({ children }) => <Layout>{children}</Layout>;
 
 function App() {
@@ -48,9 +50,9 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to={roleHome(user.role)} /> : <Login />} />
-      <Route path="/" element={user && user.role !== 'customer' ? <Navigate to={roleHome(user.role)} /> : <Landing />} />
-      <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
+      <Route path="/login" element={isStaffUser(user) ? <Navigate to={roleHome(user.role)} /> : <Login />} />
+      <Route path="/" element={isStaffUser(user) ? <Navigate to={roleHome(user.role)} /> : <Landing />} />
+      <Route path="/register" element={isStaffUser(user) ? <Navigate to="/" /> : <Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
       <Route path="/verify-email" element={<VerifyEmail />} />

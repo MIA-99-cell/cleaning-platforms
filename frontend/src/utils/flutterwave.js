@@ -30,13 +30,19 @@ export const initiateBookingFlutterwave = async ({
   phone,
   network,
   contactEmail,
+  isGuest = true,
 }) => {
-  const res = await api.post('/payments/flutterwave/initiate/booking', {
+  const payload = {
     booking_id: bookingId,
     phone,
     network,
     contact_email: contactEmail,
-  });
+    email: contactEmail,
+  };
+  const url = isGuest
+    ? '/public/flutterwave/initiate/booking'
+    : '/payments/flutterwave/initiate/booking';
+  const res = await api.post(url, payload);
   return res.data?.data;
 };
 
@@ -45,13 +51,19 @@ export const initiateProductOrderFlutterwave = async ({
   phone,
   network,
   contactEmail,
+  isGuest = true,
 }) => {
-  const res = await api.post('/payments/flutterwave/initiate/product-order', {
+  const payload = {
     order_group_id: orderGroupId,
     phone,
     network,
     contact_email: contactEmail,
-  });
+    email: contactEmail,
+  };
+  const url = isGuest
+    ? '/public/flutterwave/initiate/product-order'
+    : '/payments/flutterwave/initiate/product-order';
+  const res = await api.post(url, payload);
   return res.data?.data;
 };
 

@@ -1,17 +1,15 @@
 import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
 import { formatCFA } from '../utils/currency';
-import { useAuth } from '../contexts/AuthContext';
 import { useBookingCart } from '../contexts/BookingCartContext';
 import MarketplaceSection from '../components/MarketplaceSection';
 import ServiceBookingPanel from '../components/ServiceBookingPanel';
 import toast from 'react-hot-toast';
 import './Landing.css';
+import useLockBodyScroll from '../hooks/useLockBodyScroll';
 
 const Landing = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const { addBooking, totalItems } = useBookingCart();
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
@@ -19,40 +17,54 @@ const Landing = () => {
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [showBookingCart, setShowBookingCart] = useState(false);
   const [bookingForm, setBookingForm] = useState({
+    full_name: '',
+    email: '',
+    phone: '',
     scheduled_date: '',
     scheduled_time: '',
     address: '',
     special_instructions: '',
   });
 
+  useLockBodyScroll(showBookingForm || showBookingCart);
+
   useEffect(() => {
-    api
-      .get('/customer/services')
-      .then((res) => {
-        const list = Array.isArray(res.data?.data) ? res.data.data : [];
-        setServices(list.slice(0, 9));
-      })
-      .catch(() => setServices([]))
-      .finally(() => setLoadingServices(false));
+    const scrollToHash = () => {
+      const id = window.location.hash.replace('#', '');
+      if (!id) return;
+      const el = document.getElementById(id);
+      if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    };
+
+    scrollToHash();
+    window.addEventListener('hashchange', scrollToHash);
+    return () => window.removeEventListener('hashchange', scrollToHash);
   }, []);
 
-  const requireCustomer = () => {
-    if (!user) {
-      toast('Please sign in as a customer to book services.', { icon: 'ℹ️' });
-      navigate('/login');
-      return false;
-    }
-    if (user.role !== 'customer') {
-      toast.error('Only customer accounts can book services.');
-      return false;
-    }
-    return true;
-  };
+  useEffect(() => {
+    const loadServices = () => {
+      setLoadingServices(true);
+      api.get('/public/services', { params: { limit: 50 } })
+        .then((res) => {
+          const list = Array.isArray(res.data?.data) ? res.data.data : [];
+          setServices(list);
+        })
+        .catch(() => setServices([]))
+        .finally(() => setLoadingServices(false));
+    };
+
+    loadServices();
+    const onFocus = () => loadServices();
+    window.addEventListener('focus', onFocus);
+    return () => window.removeEventListener('focus', onFocus);
+  }, []);
 
   const handleBookNow = (service) => {
-    if (!requireCustomer()) return;
     setSelectedService(service);
     setBookingForm({
+      full_name: '',
+      email: '',
+      phone: '',
       scheduled_date: '',
       scheduled_time: '',
       address: '',
@@ -81,10 +93,14 @@ const Landing = () => {
       <ServiceBookingPanel open={showBookingCart} onClose={() => setShowBookingCart(false)} />
 
       <header className="landing-header">
-        <h1>CleanPro</h1>
-        <div>
-          <Link to="/login" className="btn btn-outline">Sign In</Link>
-          <Link to="/register" className="btn btn-primary" style={{ marginLeft: '0.5rem' }}>Get Started</Link>
+        <h1 className="landing-brand">CleanPro</h1>
+        <nav className="landing-header-nav" aria-label="Home page sections">
+          <a href="#marketplace" className="landing-nav-link">Marketplace</a>
+          <a href="#services" className="landing-nav-link">Services</a>
+        </nav>
+        <div className="landing-header-actions">
+          <Link to="/login" className="btn btn-outline btn-sm landing-header-btn">Sign In</Link>
+          <Link to="/register" className="btn btn-primary btn-sm landing-header-btn">Get Started</Link>
         </div>
       </header>
 
@@ -92,8 +108,8 @@ const Landing = () => {
         <h2>Multi-Tenant Cleaning Platform</h2>
         <p>Manage your cleaning business, assign jobs to cleaners, and let customers book services online.</p>
         <div className="landing-actions">
-          <Link to="/register" className="btn btn-primary btn-lg">Register Your Company</Link>
-          <Link to="/login" className="btn btn-outline btn-lg">Customer Login</Link>
+          <Link to="/register" className="btn btn-primary btn-lg">Get Started</Link>
+          <Link to="/login" className="btn btn-outline btn-lg">Sign In</Link>
         </div>
       </section>
 
@@ -108,16 +124,16 @@ const Landing = () => {
         </div>
         <div className="feature-card">
           <h3>For Customers</h3>
-          <p>Browse services, shop cleaning products, book cleanings, pay online, and leave reviews.</p>
+          <p>Browse services, shop cleaning products, book cleanings, pay online, and leave reviews — no account needed.</p>
         </div>
       </section>
 
       <MarketplaceSection limit={12} showCart />
 
-      <section className="landing-services">
+      <section id="services" className="landing-services">
         <div className="landing-services-header">
           <h3>Available Services</h3>
-          <p>Compare company offers and prices in FCFA.</p>
+          <p>Compare company offers and prices in FCFA. Book instantly — no login required.</p>
         </div>
 
         {loadingServices ? (
@@ -144,7 +160,7 @@ const Landing = () => {
         )}
       </section>
 
-      {user?.role === 'customer' && (
+      {totalItems > 0 && (
         <button
           type="button"
           className="booking-fab"
@@ -152,18 +168,33 @@ const Landing = () => {
           aria-label="Open booking cart"
         >
           📅
-          {totalItems > 0 && <span className="cart-fab-badge">{totalItems}</span>}
+          <span className="cart-fab-badge">{totalItems}</span>
         </button>
       )}
 
       {showBookingForm && selectedService && (
-        <div className="landing-modal-backdrop">
-          <div className="card landing-modal">
+        <div className="landing-modal-backdrop" onClick={() => setShowBookingForm(false)}>
+          <div className="card landing-modal" onClick={(e) => e.stopPropagation()}>
             <h2 style={{ marginBottom: '0.35rem' }}>Book Service</h2>
             <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
               {selectedService.name} — {selectedService.company_name} ({formatCFA(selectedService.price)})
             </p>
             <form onSubmit={addToBookingCart}>
+              <div className="form-group">
+                <label>Full Name</label>
+                <input className="form-control" value={bookingForm.full_name}
+                  onChange={(e) => setBookingForm({ ...bookingForm, full_name: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Email</label>
+                <input type="email" className="form-control" value={bookingForm.email}
+                  onChange={(e) => setBookingForm({ ...bookingForm, email: e.target.value })} required />
+              </div>
+              <div className="form-group">
+                <label>Phone</label>
+                <input className="form-control" value={bookingForm.phone} placeholder="670000000"
+                  onChange={(e) => setBookingForm({ ...bookingForm, phone: e.target.value })} required />
+              </div>
               <div className="form-group">
                 <label>Date</label>
                 <input type="date" className="form-control" value={bookingForm.scheduled_date}

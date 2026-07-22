@@ -3,21 +3,23 @@ import api from '../services/api';
 import { formatCFA } from '../utils/currency';
 import toast from 'react-hot-toast';
 import { printPaymentReceipt } from '../utils/receipt';
-import { useAuth } from '../contexts/AuthContext';
 import {
   FLUTTERWAVE_NETWORKS,
   handleFlutterwaveResponse,
   initiateBookingFlutterwave,
 } from '../utils/flutterwave';
+import './CartPanel.css';
+import useLockBodyScroll from '../hooks/useLockBodyScroll';
 
 const PaymentModal = ({ booking, onClose, onSuccess }) => {
-  const { user } = useAuth();
   const [method, setMethod] = useState('flutterwave');
   const [transactionRef, setTransactionRef] = useState('');
-  const [phone, setPhone] = useState('');
+  const [phone, setPhone] = useState(booking?.customer_phone || '');
   const [network, setNetwork] = useState('MTN');
-  const [contactEmail, setContactEmail] = useState(user?.email || '');
+  const [contactEmail, setContactEmail] = useState(booking?.customer_email || '');
   const [loading, setLoading] = useState(false);
+
+  useLockBodyScroll(!!booking);
 
   if (!booking) return null;
 
@@ -40,8 +42,9 @@ const PaymentModal = ({ booking, onClose, onSuccess }) => {
       }
 
       const ref = transactionRef || `TXN-${Date.now()}`;
-      const res = await api.post('/customer/payments', {
+      const res = await api.post('/public/payments', {
         booking_id: booking.id,
+        email: contactEmail.trim(),
         payment_method: method,
         transaction_ref: ref,
       });
@@ -66,8 +69,8 @@ const PaymentModal = ({ booking, onClose, onSuccess }) => {
   };
 
   return (
-    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-      <div className="card" style={{ width: '100%', maxWidth: 420 }}>
+    <div className="modal-overlay" onClick={onClose}>
+      <div className="card modal-panel" style={{ maxWidth: 420 }} onClick={(e) => e.stopPropagation()}>
         <h2 style={{ marginBottom: '0.5rem' }}>Make Payment</h2>
         <p style={{ fontSize: '0.875rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
           {booking.service_name} — {booking.company_name}

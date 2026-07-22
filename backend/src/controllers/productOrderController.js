@@ -2,6 +2,7 @@ const { v4: uuidv4 } = require('uuid');
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
 const { notifyProductOrderPlaced } = require('../services/productOrderNotificationService');
+const { recordProductOrderCommission } = require('../services/platformCommissionService');
 
 const loadProduct = async (productId) => {
   const [rows] = await pool.query(
@@ -335,6 +336,11 @@ const confirmProductOrder = async (req, res) => {
       [String(req.user.id), id, req.tenantId]
     );
 
+    await recordProductOrderCommission({
+      ...order,
+      confirmed_at: new Date(),
+    });
+
     sendSuccess(res, null, order.payment_method === 'flutterwave'
       ? 'Flutterwave payment confirmed'
       : 'Payment confirmed');
@@ -368,6 +374,13 @@ const markProductOrderDelivered = async (req, res) => {
       [id, req.tenantId]
     );
 
+    if (order.payment_method === 'cash_on_delivery') {
+      await recordProductOrderCommission({
+        ...order,
+        confirmed_at: new Date(),
+      });
+    }
+
     sendSuccess(res, null, 'Order marked as delivered');
   } catch (error) {
     console.error('markProductOrderDelivered error:', error.message);
@@ -382,4 +395,5 @@ module.exports = {
   getCustomerProductOrders,
   confirmProductOrder,
   markProductOrderDelivered,
+  placeOrdersForTenant,
 };

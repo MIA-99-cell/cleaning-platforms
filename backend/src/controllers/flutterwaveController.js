@@ -9,6 +9,10 @@ const {
   isSuccessfulCharge,
   isConfigured,
 } = require('../services/flutterwaveService');
+const {
+  recordBookingPaymentCommission,
+  recordProductOrderGroupCommissions,
+} = require('../services/platformCommissionService');
 
 const confirmBookingPayment = async (paymentId, chargeId, transactionRef) => {
   const [existing] = await pool.query('SELECT * FROM payments WHERE id = ?', [paymentId]);
@@ -29,6 +33,12 @@ const confirmBookingPayment = async (paymentId, chargeId, transactionRef) => {
     [existing[0].tenant_id, existing[0].booking_id, paymentId, invoiceNumber, existing[0].amount]
   );
 
+  await recordBookingPaymentCommission({
+    ...existing[0],
+    id: paymentId,
+    confirmed_at: new Date(),
+  });
+
   return { ok: true };
 };
 
@@ -48,6 +58,8 @@ const confirmProductOrders = async (orderGroupId, chargeId, transactionRef) => {
      WHERE order_group_id = ? AND status IN ('payment_pending', 'placed')`,
     [transactionRef, chargeId, orderGroupId]
   );
+
+  await recordProductOrderGroupCommissions(orderGroupId);
 
   return { ok: true };
 };

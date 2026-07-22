@@ -4,7 +4,7 @@ import api from '../../services/api';
 import toast from 'react-hot-toast';
 
 const Register = () => {
-  const [userType, setUserType] = useState('customer');
+  const [userType, setUserType] = useState('tenant');
   const [form, setForm] = useState({
     full_name: '', email: '', password: '', phone: '', address: '',
     company_name: '', license_number: '',
@@ -20,38 +20,22 @@ const Register = () => {
     setLoading(true);
     setVerifyUrl('');
     try {
-      const endpoint = userType === 'tenant' ? '/auth/register/tenant' : '/auth/register/customer';
-      const payload = userType === 'tenant'
-        ? {
-            full_name: form.full_name,
-            email: form.email,
-            password: form.password,
-            phone: form.phone,
-            company_name: form.company_name,
-            license_number: form.license_number,
-            address: form.address,
-          }
-        : {
-            full_name: form.full_name,
-            email: form.email,
-            password: form.password,
-            phone: form.phone,
-            address: form.address,
-          };
+      const res = await api.post('/auth/register/tenant', {
+        full_name: form.full_name,
+        email: form.email,
+        password: form.password,
+        phone: form.phone,
+        company_name: form.company_name,
+        license_number: form.license_number,
+        address: form.address,
+      });
 
-      const res = await api.post(endpoint, payload);
-
-      if (userType === 'tenant') {
-        toast.success(res.data.message || 'Registration successful!');
-        if (res.data.data?.verificationUrl) {
-          setVerifyUrl(res.data.data.verificationUrl);
-          toast('Verification link shown below (dev mode)', { icon: 'ℹ️' });
-        } else {
-          setTimeout(() => navigate('/login'), 2000);
-        }
+      toast.success(res.data.message || 'Registration successful!');
+      if (res.data.data?.verificationUrl) {
+        setVerifyUrl(res.data.data.verificationUrl);
+        toast('Verification link shown below (dev mode)', { icon: 'ℹ️' });
       } else {
-        toast.success('Registration successful!');
-        navigate('/login');
+        setTimeout(() => navigate('/login'), 2000);
       }
     } catch (err) {
       const msg = err.response?.data?.message || 'Registration failed';
@@ -80,28 +64,23 @@ const Register = () => {
           <div className="form-group">
             <label>Register As</label>
             <select className="form-control" value={userType} onChange={(e) => setUserType(e.target.value)}>
-              <option value="customer">Customer</option>
               <option value="tenant">Cleaning Company</option>
             </select>
           </div>
 
-          {userType === 'tenant' && (
-            <>
-              <div className="form-group">
-                <label>Company Name *</label>
-                <input name="company_name" className="form-control" value={form.company_name}
-                  onChange={handleChange} required />
-              </div>
-              <div className="form-group">
-                <label>License Number *</label>
-                <input name="license_number" className="form-control" value={form.license_number}
-                  onChange={handleChange} placeholder="e.g. CLN-2024-001" required />
-              </div>
-            </>
-          )}
+          <div className="form-group">
+            <label>Company Name *</label>
+            <input name="company_name" className="form-control" value={form.company_name}
+              onChange={handleChange} required />
+          </div>
+          <div className="form-group">
+            <label>License Number *</label>
+            <input name="license_number" className="form-control" value={form.license_number}
+              onChange={handleChange} placeholder="e.g. CLN-2024-001" required />
+          </div>
 
           <div className="form-group">
-            <label>{userType === 'tenant' ? 'Contact Person Name *' : 'Full Name *'}</label>
+            <label>Contact Person Name *</label>
             <input name="full_name" className="form-control" value={form.full_name} onChange={handleChange} required />
           </div>
           <div className="form-group">
@@ -113,7 +92,7 @@ const Register = () => {
             <input name="phone" className="form-control" value={form.phone} onChange={handleChange} />
           </div>
           <div className="form-group">
-            <label>{userType === 'tenant' ? 'Company Address' : 'Address'}</label>
+            <label>Company Address</label>
             <input name="address" className="form-control" value={form.address} onChange={handleChange} />
           </div>
           <div className="form-group">
@@ -122,11 +101,9 @@ const Register = () => {
               onChange={handleChange} minLength={8} required />
           </div>
 
-          {userType === 'tenant' && (
-            <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              After registration, verify your email. Your account must also be approved by the platform admin before you can log in.
-            </p>
-          )}
+          <p style={{ fontSize: '0.8125rem', color: 'var(--text-muted)', marginBottom: '1rem' }}>
+            After registration, verify your email. Your account must also be approved by the platform admin before you can log in.
+          </p>
 
           <button type="submit" className="btn btn-primary" disabled={loading}>
             {loading ? 'Creating...' : 'Create Account'}

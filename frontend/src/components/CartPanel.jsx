@@ -1,31 +1,20 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
 import { useCart } from '../contexts/CartContext';
 import { formatCFA } from '../utils/currency';
 import CartCheckoutModal from './CartCheckoutModal';
-import toast from 'react-hot-toast';
+import useLockBodyScroll from '../hooks/useLockBodyScroll';
 import './CartPanel.css';
 
 const CartPanel = () => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const {
     items, totalItems, totalAmount, updateQuantity, removeItem, clearCart,
   } = useCart();
   const [open, setOpen] = useState(false);
   const [checkoutOpen, setCheckoutOpen] = useState(false);
 
+  useLockBodyScroll(open || checkoutOpen);
+
   const handleCheckout = () => {
-    if (!user) {
-      toast('Please sign in as a customer to checkout.', { icon: 'ℹ️' });
-      navigate('/login');
-      return;
-    }
-    if (user.role !== 'customer') {
-      toast.error('Only customer accounts can purchase products.');
-      return;
-    }
     setOpen(false);
     setCheckoutOpen(true);
   };
@@ -54,7 +43,7 @@ const CartPanel = () => {
             {items.length === 0 ? (
               <p className="cart-empty">Your cart is empty. Add products from the marketplace.</p>
             ) : (
-              <>
+              <div className="cart-drawer-body">
                 <div className="cart-items">
                   {items.map((item) => (
                     <div key={item.id} className="cart-item">
@@ -86,7 +75,7 @@ const CartPanel = () => {
                     <button type="button" className="btn btn-primary" onClick={handleCheckout}>Checkout</button>
                   </div>
                 </div>
-              </>
+              </div>
             )}
           </aside>
         </>

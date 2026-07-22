@@ -18,6 +18,10 @@ module.exports = {
     notifyEmail: process.env.SUPER_ADMIN_NOTIFY_EMAIL || null,
     notifyPhone: process.env.SUPER_ADMIN_NOTIFY_PHONE || null,
   },
+  platform: {
+    /** Minimum 5% commission on tenant sales each month */
+    commissionRate: Math.max(0.05, parseFloat(process.env.PLATFORM_COMMISSION_RATE || '0.05') || 0.05),
+  },
   sms: {
     accountSid: process.env.TWILIO_ACCOUNT_SID,
     authToken: process.env.TWILIO_AUTH_TOKEN,

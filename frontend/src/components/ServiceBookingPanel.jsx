@@ -1,36 +1,28 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { useBookingCart } from '../contexts/BookingCartContext';
-import { formatCFA } from '../utils/currency';
-import PaymentModal from './PaymentModal';
 import api from '../services/api';
+import { formatCFA } from '../utils/currency';
 import toast from 'react-hot-toast';
+import { useBookingCart } from '../contexts/BookingCartContext';
+import PaymentModal from './PaymentModal';
+import useLockBodyScroll from '../hooks/useLockBodyScroll';
 import './CartPanel.css';
 
 const ServiceBookingPanel = ({ open, onClose }) => {
-  const { user } = useAuth();
-  const navigate = useNavigate();
   const {
-    items, totalItems, totalAmount, removeBooking, clearCart,
+    items, totalItems, totalAmount, removeBooking,
   } = useBookingCart();
   const [payBooking, setPayBooking] = useState(null);
   const [payingId, setPayingId] = useState(null);
 
-  const handleMakePayment = async (item) => {
-    if (!user) {
-      toast('Please sign in as a customer to book and pay.', { icon: 'ℹ️' });
-      navigate('/login');
-      return;
-    }
-    if (user.role !== 'customer') {
-      toast.error('Only customer accounts can book services.');
-      return;
-    }
+  useLockBodyScroll(open || !!payBooking);
 
+  const handleMakePayment = async (item) => {
     setPayingId(item.cartId);
     try {
-      const res = await api.post('/customer/bookings', {
+      const res = await api.post('/public/bookings', {
+        full_name: item.full_name,
+        email: item.email,
+        phone: item.phone,
         service_id: item.service_id,
         scheduled_date: item.scheduled_date,
         scheduled_time: item.scheduled_time,
@@ -47,6 +39,7 @@ const ServiceBookingPanel = ({ open, onClose }) => {
         service_name: item.name,
         company_name: item.company_name,
         total_amount: item.price,
+        customer_email: item.email,
       });
       toast.success('Booking saved. Complete payment now.');
     } catch (err) {
@@ -63,9 +56,6 @@ const ServiceBookingPanel = ({ open, onClose }) => {
       <PaymentModal
         booking={payBooking}
         onClose={() => setPayBooking(null)}
-        onSuccess={() => {
-          if (items.length === 0) clearCart();
-        }}
       />
 
       {open && (
@@ -80,7 +70,7 @@ const ServiceBookingPanel = ({ open, onClose }) => {
             {items.length === 0 ? (
               <p className="cart-empty">No services in your booking cart. Click Book Now on a service to add one.</p>
             ) : (
-              <>
+              <div className="cart-drawer-body">
                 <div className="cart-items">
                   {items.map((item) => (
                     <div key={item.cartId} className="cart-item">
@@ -88,6 +78,7 @@ const ServiceBookingPanel = ({ open, onClose }) => {
                         <strong>{item.name}</strong>
                         <p>{item.company_name}</p>
                         <p>{formatCFA(item.price)}</p>
+                        <p className="booking-cart-meta">{item.full_name} · {item.email}</p>
                         <p className="booking-cart-meta">
                           {item.scheduled_date} at {String(item.scheduled_time || '').slice(0, 5)}
                         </p>
@@ -112,7 +103,7 @@ const ServiceBookingPanel = ({ open, onClose }) => {
                 <div className="cart-footer">
                   <strong>Total: {formatCFA(totalAmount)}</strong>
                 </div>
-              </>
+              </div>
             )}
           </aside>
         </>

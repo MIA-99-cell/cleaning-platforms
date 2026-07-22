@@ -147,8 +147,8 @@ const sendTransactionalEmail = async ({ to, subject, html, text }) => {
 };
 
 const sendNotificationEmail = async ({ to, subject, html, text, actionUrl }) => {
-  const smtpResult = await sendEmail({ to, subject, html, text });
-  if (smtpResult.success && !smtpResult.dev) return smtpResult;
+  const result = await sendTransactionalEmail({ to, subject, html, text });
+  if (result.success && !result.dev) return result;
 
   if (config.supabase.useEmail && isSupabaseConfigured() && actionUrl) {
     const supabaseResult = await sendSupabaseMagicLinkEmail({
@@ -163,7 +163,11 @@ const sendNotificationEmail = async ({ to, subject, html, text, actionUrl }) => 
     console.warn(`[Email] Supabase fallback failed for ${to}:`, supabaseResult.error);
   }
 
-  return smtpResult;
+  if (!result.success) {
+    console.error(`[Email] Notification failed for ${to}:`, result.error || 'unknown');
+  }
+
+  return result;
 };
 
 const emailTemplates = {
@@ -218,15 +222,31 @@ const emailTemplates = {
       <p>Your booking for <strong>${serviceName}</strong> on ${date} at ${time} has been confirmed.</p>
     `,
   }),
-  companyApproval: (companyName) => ({
-    subject: 'Company Approved - Cleaning Platform',
-    html: `
-      <h2>Congratulations!</h2>
-      <p>Your company <strong>${companyName}</strong> has been approved. You can now log in and start managing your business.</p>
-      <p><a href="${config.frontendUrl}/login">Login Now</a></p>
-    `,
-    text: `Your company ${companyName} has been approved. Login at ${config.frontendUrl}/login`,
-  }),
+  companyApproval: (input) => {
+    const opts = typeof input === 'string'
+      ? { companyName: input, contactName: null }
+      : input;
+    const { companyName, contactName } = opts;
+    const loginUrl = `${config.frontendUrl}/login`;
+    const greeting = contactName ? `Hello ${contactName},` : 'Hello,';
+    return {
+      subject: `Your Company Has Been Approved - ${companyName}`,
+      html: `
+        <h2>Congratulations!</h2>
+        <p>${greeting}</p>
+        <p>Great news — your company <strong>${companyName}</strong> has been approved on CleanPro.</p>
+        <p>You can now log in and start managing your services, cleaners, bookings, and products.</p>
+        <p style="margin: 24px 0;">
+          <a href="${loginUrl}" style="background:#2563eb;color:white;padding:12px 24px;text-decoration:none;border-radius:6px;font-weight:bold;">
+            Log In to Your Dashboard
+          </a>
+        </p>
+        <p style="color:#64748b;font-size:14px;">Login page: ${loginUrl}</p>
+        <p style="color:#64748b;font-size:14px;">Select <strong>Cleaning Company</strong> when signing in.</p>
+      `,
+      text: `${greeting}\n\nYour company ${companyName} has been approved on CleanPro. Log in at ${loginUrl} and select Cleaning Company.`,
+    };
+  },
   cleanerJobAssignment: ({
     cleanerName,
     companyName,
@@ -446,10 +466,21 @@ const verifySmtp = async () => {
   }
 };
 
+/** Email sent to tenant when super admin approves their company. */
+const sendCompanyApprovalEmail = async ({ email, companyName, contactName }) => {
+  const template = emailTemplates.companyApproval({ companyName, contactName });
+  return sendNotificationEmail({
+    to: email,
+    ...template,
+    actionUrl: `${config.frontendUrl}/login`,
+  });
+};
+
 module.exports = {
   sendEmail,
   sendTransactionalEmail,
   sendNotificationEmail,
+  sendCompanyApprovalEmail,
   emailTemplates,
   isSmtpConfigured,
   isResendConfigured,

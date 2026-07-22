@@ -5,7 +5,7 @@ import toast from 'react-hot-toast';
 
 const ForgotPassword = () => {
   const [email, setEmail] = useState('');
-  const [userType, setUserType] = useState('customer');
+  const [userType, setUserType] = useState('tenant');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
@@ -34,7 +34,6 @@ const ForgotPassword = () => {
             <div className="form-group">
               <label>Account Type</label>
               <select className="form-control" value={userType} onChange={(e) => setUserType(e.target.value)}>
-                <option value="customer">Customer</option>
                 <option value="tenant">Cleaning Company</option>
                 <option value="cleaner">Cleaner</option>
                 <option value="super_admin">Super Admin</option>

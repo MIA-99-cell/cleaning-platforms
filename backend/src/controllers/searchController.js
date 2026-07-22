@@ -1,5 +1,6 @@
 const pool = require('../config/database');
 const { sendSuccess, sendError } = require('../utils/response');
+const { SQL_IS_ACTIVE } = require('../utils/pgCompat');
 
 const searchCompanies = async (req, res) => {
   try {
@@ -36,7 +37,7 @@ const searchServices = async (req, res) => {
   try {
     const { q, minPrice, maxPrice, tenant_id } = req.query;
 
-    let where = 's.is_active = TRUE';
+    let where = `s.${SQL_IS_ACTIVE} AND t.status = 'approved'`;
     const params = [];
 
     if (q) { where += ' AND (s.name LIKE ? OR s.description LIKE ?)'; const s = `%${q}%`; params.push(s, s); }
@@ -48,14 +49,36 @@ const searchServices = async (req, res) => {
       `SELECT s.*, c.company_name, c.rating AS company_rating, c.logo_url
        FROM services s
        JOIN companies c ON s.tenant_id = c.tenant_id
+       JOIN tenants t ON t.id = s.tenant_id
        WHERE ${where}
-       ORDER BY s.price ASC`,
+       ORDER BY s.created_at DESC`,
       params
     );
 
     sendSuccess(res, services);
   } catch (error) {
     sendError(res, 'Search failed', 500);
+  }
+};
+
+/** Home page / guest catalog — newest services from approved companies. */
+const listPublicServices = async (req, res) => {
+  try {
+    const limit = Math.min(Math.max(parseInt(req.query.limit, 10) || 50, 1), 100);
+    const [services] = await pool.query(
+      `SELECT s.*, c.company_name, c.rating AS company_rating, c.logo_url
+       FROM services s
+       JOIN companies c ON s.tenant_id = c.tenant_id
+       JOIN tenants t ON t.id = s.tenant_id
+       WHERE s.${SQL_IS_ACTIVE} AND t.status = 'approved'
+       ORDER BY s.created_at DESC
+       LIMIT ?`,
+      [limit]
+    );
+    sendSuccess(res, services);
+  } catch (error) {
+    console.error('listPublicServices error:', error.message);
+    sendError(res, 'Failed to load services', 500);
   }
 };
 
@@ -80,7 +103,7 @@ const getCustomerDashboard = async (req, res) => {
        JOIN services s ON b.service_id = s.id
        JOIN companies co ON b.tenant_id = co.tenant_id
        WHERE b.customer_id = ? AND bs.name NOT IN ('completed', 'cancelled', 'rejected')
-       ORDER BY b.scheduled_date ASC LIMIT 10`,
+       ORDER BY b.created_at DESC, b.id DESC LIMIT 10`,
       [customerId]
     );
 
@@ -114,6 +137,7 @@ const getCleanerDashboard = async (req, res) => {
 module.exports = {
   searchCompanies,
   searchServices,
+  listPublicServices,
   getCustomerDashboard,
   getCleanerDashboard,
 };

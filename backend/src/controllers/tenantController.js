@@ -3,6 +3,7 @@ const { sendSuccess, sendError, sendPaginated } = require('../utils/response');
 const { paginate } = require('../utils/auth');
 const { logActivity } = require('../utils/logger');
 const { storeUploadedFile } = require('../services/storageService');
+const { getTenantCommissionStats, getCommissionRate } = require('../services/platformCommissionService');
 
 const getDashboard = async (req, res) => {
   try {
@@ -14,11 +15,18 @@ const getDashboard = async (req, res) => {
         (SELECT COUNT(*) FROM bookings b JOIN booking_status bs ON b.status_id = bs.id WHERE b.tenant_id = ? AND bs.name = 'pending') AS pending_jobs,
         (SELECT COUNT(*) FROM bookings b JOIN booking_status bs ON b.status_id = bs.id WHERE b.tenant_id = ? AND bs.name = 'completed') AS completed_jobs,
         (SELECT COUNT(*) FROM bookings b JOIN booking_status bs ON b.status_id = bs.id WHERE b.tenant_id = ? AND bs.name = 'cancelled') AS cancelled_jobs,
-        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE tenant_id = ? AND status IN ('successful', 'confirmed') AND EXTRACT(MONTH FROM created_at) = EXTRACT(MONTH FROM NOW()) AND EXTRACT(YEAR FROM created_at) = EXTRACT(YEAR FROM NOW())) AS monthly_revenue,
-        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE tenant_id = ? AND status IN ('successful', 'confirmed') AND DATE(created_at) = CURRENT_DATE) AS todays_revenue,
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE tenant_id = ? AND status IN ('successful', 'confirmed') AND DATE(created_at) = CURRENT_DATE) AS todays_booking_revenue,
         (SELECT COUNT(DISTINCT customer_id) FROM bookings WHERE tenant_id = ?) AS total_customers,
         (SELECT COUNT(*) FROM cleaners WHERE tenant_id = ? AND status = 'active') AS total_cleaners`,
-      Array(8).fill(tenantId)
+      Array(7).fill(tenantId)
+    );
+
+    const [[todayRow]] = await pool.query(
+      `SELECT
+        (SELECT COALESCE(SUM(amount), 0) FROM payments WHERE tenant_id = ? AND status IN ('successful', 'confirmed') AND DATE(COALESCE(confirmed_at, created_at)) = CURRENT_DATE)
+        + (SELECT COALESCE(SUM(total_amount), 0) FROM product_orders WHERE tenant_id = ? AND status IN ('paid', 'delivered') AND DATE(COALESCE(confirmed_at, updated_at, created_at)) = CURRENT_DATE)
+        AS total`,
+      [tenantId, tenantId]
     );
 
     const [companyRows] = await pool.query(
@@ -40,8 +48,16 @@ const getDashboard = async (req, res) => {
       [tenantId]
     );
 
+    const commission = await getTenantCommissionStats(tenantId);
+
     sendSuccess(res, {
       ...stats,
+      todays_sales: parseFloat(todayRow?.total || 0),
+      monthly_gross_sales: commission.grossSales,
+      monthly_platform_fee: commission.platformCommission,
+      monthly_net_earnings: commission.netEarnings,
+      platform_commission_rate: getCommissionRate(),
+      commission_period: commission.periodMonth,
       company: companyRows[0] || null,
       recentReviews,
     });
@@ -118,7 +134,8 @@ const createService = async (req, res) => {
     const image_url = req.file ? await storeUploadedFile(req.file, 'services') : null;
 
     const [result] = await pool.query(
-      `INSERT INTO services (tenant_id, name, description, price, duration_minutes, image_url) VALUES (?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO services (tenant_id, name, description, price, duration_minutes, image_url, is_active)
+       VALUES (?, ?, ?, ?, ?, ?, TRUE)`,
       [req.tenantId, name, description, price, duration_minutes || 60, image_url]
     );
 
