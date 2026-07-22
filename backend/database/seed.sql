@@ -1,2 +1,2 @@
 -- Seed data placeholder (run setup.js or update-super-admin.js for hashed passwords)
--- Super Admin: admincleaning43@gmail.com / admin@1234.*
+-- Super Admin credentials are read from SUPER_ADMIN_EMAIL / SUPER_ADMIN_PASSWORD env vars.
