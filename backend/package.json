@@ -6,6 +6,8 @@
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
+    "test": "jest",
+    "test:coverage": "jest --coverage",
     "db:setup": "node database/setup.js",
     "db:reset": "node database/reset.js",
     "db:migrate": "node database/migrate.js",
@@ -39,6 +41,7 @@
     "uuid": "^10.0.0"
   },
   "devDependencies": {
+    "jest": "^29.7.0",
     "nodemon": "^3.1.4"
   }
 }
