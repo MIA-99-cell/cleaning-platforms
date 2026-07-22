@@ -13,6 +13,7 @@ const customerRoutes = require('./routes/customer');
 const notificationRoutes = require('./routes/notifications');
 const flutterwaveRoutes = require('./routes/flutterwave');
 const flutterwaveController = require('./controllers/flutterwaveController');
+const { authenticate, authorize } = require('./middleware/auth');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -21,8 +22,12 @@ app.use(helmet({ crossOriginResourcePolicy: { policy: 'cross-origin' } }));
 
 const allowedOrigins = [
   process.env.FRONTEND_URL,
-  'http://localhost:3000',
-  'http://localhost:5173',
+  ...(process.env.ADDITIONAL_ALLOWED_ORIGINS || '')
+    .split(',')
+    .map((url) => url.trim()),
+  ...(process.env.NODE_ENV !== 'production'
+    ? ['http://localhost:3000', 'http://localhost:5173']
+    : []),
 ].filter(Boolean).map((url) => url.replace(/\/$/, ''));
 
 app.use(cors({
@@ -30,10 +35,7 @@ app.use(cors({
     // Allow non-browser tools (no Origin) and known frontends
     if (!origin) return callback(null, true);
     const normalized = origin.replace(/\/$/, '');
-    if (
-      allowedOrigins.includes(normalized)
-      || /\.vercel\.app$/i.test(normalized)
-    ) {
+    if (allowedOrigins.includes(normalized)) {
       return callback(null, true);
     }
     return callback(new Error(`CORS blocked for origin: ${origin}`));
@@ -90,7 +92,7 @@ app.get('/api/health', async (req, res) => {
 });
 
 
-app.get('/api/health/email', async (req, res) => {
+app.get('/api/health/email', authenticate, authorize('super_admin'), async (req, res) => {
   const { verifySmtp, isResendConfigured } = require('./services/emailService');
   const result = await verifySmtp();
   res.json({
@@ -101,7 +103,7 @@ app.get('/api/health/email', async (req, res) => {
   });
 });
 
-app.get('/api/health/flutterwave', async (req, res) => {
+app.get('/api/health/flutterwave', authenticate, authorize('super_admin'), async (req, res) => {
   const { verifyCredentials } = require('./services/flutterwaveService');
   const result = await verifyCredentials();
   res.json(result);
