@@ -5,6 +5,7 @@ import { Toaster } from 'react-hot-toast';
 import App from './App';
 import { AuthProvider } from './contexts/AuthContext';
 import { CartProvider } from './contexts/CartContext';
+import { BookingCartProvider } from './contexts/BookingCartContext';
 import './index.css';
 
 ReactDOM.createRoot(document.getElementById('root')).render(
@@ -12,8 +13,10 @@ ReactDOM.createRoot(document.getElementById('root')).render(
     <BrowserRouter>
       <AuthProvider>
         <CartProvider>
-          <App />
-          <Toaster position="top-right" />
+          <BookingCartProvider>
+            <App />
+            <Toaster position="top-right" />
+          </BookingCartProvider>
         </CartProvider>
       </AuthProvider>
     </BrowserRouter>
