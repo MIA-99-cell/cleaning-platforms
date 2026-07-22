@@ -37,7 +37,7 @@ const BrowseServices = () => {
       await api.post('/customer/bookings', bookingForm);
       toast.success('Booking created successfully!');
       setShowBooking(false);
-      navigate('/customer/bookings');
+      navigate('/');
     } catch (err) {
       toast.error(err.response?.data?.message || 'Booking failed');
     }

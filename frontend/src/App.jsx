@@ -32,13 +32,10 @@ import CleanerDashboard from './pages/cleaner/Dashboard';
 import Jobs from './pages/cleaner/Jobs';
 import CleanerProfile from './pages/cleaner/Profile';
 
-import CustomerDashboard from './pages/customer/Dashboard';
-import BrowseServices from './pages/customer/BrowseServices';
-import CustomerBookings from './pages/customer/Bookings';
-import CustomerPayments from './pages/customer/Payments';
-import CustomerMarketplace from './pages/customer/Marketplace';
 import Landing from './pages/Landing';
 import PaymentReturn from './pages/PaymentReturn';
+
+const roleHome = (role) => (role === 'customer' ? '/' : `/${role.replace('_', '-')}`);
 
 const AppLayout = ({ children }) => <Layout>{children}</Layout>;
 
@@ -51,8 +48,8 @@ function App() {
 
   return (
     <Routes>
-      <Route path="/login" element={user ? <Navigate to={`/${user.role.replace('_', '-')}`} /> : <Login />} />
-      <Route path="/" element={user ? <Navigate to={`/${user.role.replace('_', '-')}`} /> : <Landing />} />
+      <Route path="/login" element={user ? <Navigate to={roleHome(user.role)} /> : <Login />} />
+      <Route path="/" element={user && user.role !== 'customer' ? <Navigate to={roleHome(user.role)} /> : <Landing />} />
       <Route path="/register" element={user ? <Navigate to="/" /> : <Register />} />
       <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route path="/reset-password" element={<ResetPassword />} />
@@ -86,12 +83,8 @@ function App() {
       <Route path="/cleaner/jobs" element={<ProtectedRoute allowedRoles={['cleaner']}><AppLayout><Jobs /></AppLayout></ProtectedRoute>} />
       <Route path="/cleaner/profile" element={<ProtectedRoute allowedRoles={['cleaner']}><AppLayout><CleanerProfile /></AppLayout></ProtectedRoute>} />
 
-      {/* Customer */}
-      <Route path="/customer" element={<ProtectedRoute allowedRoles={['customer']}><AppLayout><CustomerDashboard /></AppLayout></ProtectedRoute>} />
-      <Route path="/customer/browse" element={<ProtectedRoute allowedRoles={['customer']}><AppLayout><BrowseServices /></AppLayout></ProtectedRoute>} />
-      <Route path="/customer/bookings" element={<ProtectedRoute allowedRoles={['customer']}><AppLayout><CustomerBookings /></AppLayout></ProtectedRoute>} />
-      <Route path="/customer/payments" element={<ProtectedRoute allowedRoles={['customer']}><AppLayout><CustomerPayments /></AppLayout></ProtectedRoute>} />
-      <Route path="/customer/marketplace" element={<ProtectedRoute allowedRoles={['customer']}><AppLayout><CustomerMarketplace /></AppLayout></ProtectedRoute>} />
+      {/* Customer — all activity happens on the home page */}
+      <Route path="/customer/*" element={<Navigate to="/" replace />} />
 
       <Route path="*" element={<Navigate to="/" />} />
     </Routes>

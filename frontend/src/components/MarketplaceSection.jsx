@@ -54,7 +54,7 @@ const MarketplaceSection = ({ title = 'Cleaning Products Marketplace', limit, sh
   };
 
   return (
-    <section className="landing-marketplace">
+    <section id="marketplace" className="landing-marketplace">
       <div className="landing-services-header">
         <h3>{title}</h3>
         <p>Shop cleaning supplies from verified companies. Add to cart or buy now. Pay on delivery or via Mobile Money.</p>

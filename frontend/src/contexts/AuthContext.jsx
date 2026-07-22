@@ -13,7 +13,7 @@ const roleDashboards = {
   super_admin: '/super-admin',
   tenant: '/tenant',
   cleaner: '/cleaner',
-  customer: '/customer',
+  customer: '/',
 };
 
 export const AuthProvider = ({ children }) => {
