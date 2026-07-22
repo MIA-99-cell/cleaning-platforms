@@ -1,18 +1,25 @@
 import axios from 'axios';
 
+const PRODUCTION_API = 'https://cleaning-platforms.onrender.com/api';
+
 const getApiBase = () => {
   if (import.meta.env.VITE_API_URL) {
     return import.meta.env.VITE_API_URL.replace(/\/$/, '');
   }
-  // On Vercel, call Render directly (more reliable than /api proxy for POST)
-  if (typeof window !== 'undefined' && /\.vercel\.app$/i.test(window.location.hostname)) {
-    return 'https://cleaning-platforms.onrender.com/api';
+  if (typeof window !== 'undefined') {
+    const host = window.location.hostname;
+    if (host === 'localhost' || host === '127.0.0.1') {
+      return '/api';
+    }
+    // In production, call Render directly (works for vercel.app and custom domains).
+    return PRODUCTION_API;
   }
   return '/api';
 };
 
 const api = axios.create({
   baseURL: getApiBase(),
+  timeout: 60000,
   headers: { 'Content-Type': 'application/json' },
 });
 

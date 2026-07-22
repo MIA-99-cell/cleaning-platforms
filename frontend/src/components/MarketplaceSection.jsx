@@ -6,6 +6,7 @@ import ProductCheckoutModal from './ProductCheckoutModal';
 import CartPanel from './CartPanel';
 import toast from 'react-hot-toast';
 import './CartPanel.css';
+import { fetchWithRetry } from '../utils/fetchWithRetry';
 import useLockBodyScroll from '../hooks/useLockBodyScroll';
 
 const productImage = (url) => (url ? url : null);
@@ -16,17 +17,23 @@ const MarketplaceSection = ({ title = 'Cleaning Products Marketplace', limit, sh
   const [loading, setLoading] = useState(true);
   const [selectedProduct, setSelectedProduct] = useState(null);
 
+  const [loadError, setLoadError] = useState('');
+
   useLockBodyScroll(!!selectedProduct);
 
   useEffect(() => {
     const loadProducts = () => {
       setLoading(true);
-      api.get('/public/products', { params: { limit: limit || 50 } })
+      setLoadError('');
+      fetchWithRetry(() => api.get('/public/products', { params: { limit: limit || 50 } }))
         .then((res) => {
           const list = Array.isArray(res.data?.data) ? res.data.data : [];
           setProducts(limit ? list.slice(0, limit) : list);
         })
-        .catch(() => setProducts([]))
+        .catch(() => {
+          setProducts([]);
+          setLoadError('Could not load products. The server may be waking up — please wait a moment and refresh.');
+        })
         .finally(() => setLoading(false));
     };
 
@@ -53,7 +60,9 @@ const MarketplaceSection = ({ title = 'Cleaning Products Marketplace', limit, sh
       </div>
 
       {loading ? (
-        <p className="landing-services-empty">Loading products...</p>
+        <p className="landing-services-empty">Loading products… (first load can take up to a minute on free hosting)</p>
+      ) : loadError ? (
+        <p className="landing-services-empty">{loadError}</p>
       ) : products.length === 0 ? (
         <p className="landing-services-empty">No products listed yet. Companies can add items from their dashboard.</p>
       ) : (

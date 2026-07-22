@@ -7,12 +7,14 @@ import MarketplaceSection from '../components/MarketplaceSection';
 import ServiceBookingPanel from '../components/ServiceBookingPanel';
 import toast from 'react-hot-toast';
 import './Landing.css';
+import { fetchWithRetry } from '../utils/fetchWithRetry';
 import useLockBodyScroll from '../hooks/useLockBodyScroll';
 
 const Landing = () => {
   const { addBooking, totalItems } = useBookingCart();
   const [services, setServices] = useState([]);
   const [loadingServices, setLoadingServices] = useState(true);
+  const [servicesError, setServicesError] = useState('');
   const [selectedService, setSelectedService] = useState(null);
   const [showBookingForm, setShowBookingForm] = useState(false);
   const [showBookingCart, setShowBookingCart] = useState(false);
@@ -44,12 +46,16 @@ const Landing = () => {
   useEffect(() => {
     const loadServices = () => {
       setLoadingServices(true);
-      api.get('/public/services', { params: { limit: 50 } })
+      setServicesError('');
+      fetchWithRetry(() => api.get('/public/services', { params: { limit: 50 } }))
         .then((res) => {
           const list = Array.isArray(res.data?.data) ? res.data.data : [];
           setServices(list);
         })
-        .catch(() => setServices([]))
+        .catch(() => {
+          setServices([]);
+          setServicesError('Could not load services. The server may be waking up — please wait a moment and refresh.');
+        })
         .finally(() => setLoadingServices(false));
     };
 
@@ -137,7 +143,9 @@ const Landing = () => {
         </div>
 
         {loadingServices ? (
-          <p className="landing-services-empty">Loading services...</p>
+          <p className="landing-services-empty">Loading services… (first load can take up to a minute on free hosting)</p>
+        ) : servicesError ? (
+          <p className="landing-services-empty">{servicesError}</p>
         ) : services.length === 0 ? (
           <p className="landing-services-empty">No services available yet.</p>
         ) : (
