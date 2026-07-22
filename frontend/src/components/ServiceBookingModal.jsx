@@ -1,3 +1,5 @@
+import { formatCFA } from '../utils/currency';
+
 const ServiceBookingModal = ({ service, bookingForm, setBookingForm, onSubmit, onClose, submitLabel = 'Confirm Booking' }) => {
   const update = (field) => (e) => setBookingForm({ ...bookingForm, [field]: e.target.value });
 
@@ -7,7 +9,8 @@ const ServiceBookingModal = ({ service, bookingForm, setBookingForm, onSubmit, o
         <h2 style={{ marginBottom: service ? '0.35rem' : '1rem' }}>Book Service</h2>
         {service && (
           <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-            {service.name} - {service.company_name}
+            {service.name} — {service.company_name}
+            {service.price != null && ` (${formatCFA(service.price)})`}
           </p>
         )}
         <form onSubmit={onSubmit}>
