@@ -1,40 +1,7 @@
-import { useState } from 'react';
-import api from '../../services/api';
-import toast from 'react-hot-toast';
+import { useReport } from '../../utils/reports';
 
 const TenantReports = () => {
-  const [reportType, setReportType] = useState('bookings');
-  const [data, setData] = useState([]);
-  const [loading, setLoading] = useState(false);
-
-  const generateReport = async () => {
-    setLoading(true);
-    try {
-      const res = await api.get('/tenant/reports', { params: { reportType } });
-      setData(res.data.data);
-    } catch {
-      toast.error('Failed to generate report');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const exportReport = async (format) => {
-    try {
-      const res = await api.get(`/tenant/reports/export/${format}`, {
-        params: { reportType },
-        responseType: 'blob',
-      });
-      const url = window.URL.createObjectURL(new Blob([res.data]));
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = `${reportType}-report.${format === 'excel' ? 'xlsx' : 'pdf'}`;
-      link.click();
-      window.URL.revokeObjectURL(url);
-    } catch {
-      toast.error('Export failed');
-    }
-  };
+  const { reportType, setReportType, data, loading, generateReport, exportReport } = useReport('/tenant/reports');
 
   return (
     <div>

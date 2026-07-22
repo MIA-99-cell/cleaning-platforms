@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import api from '../../services/api';
 import toast from 'react-hot-toast';
 import { formatCFA } from '../../utils/currency';
+import ServiceBookingModal from '../../components/ServiceBookingModal';
 
 const BrowseServices = () => {
   const navigate = useNavigate();
@@ -80,37 +81,12 @@ const BrowseServices = () => {
       </div>
 
       {showBooking && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div className="card" style={{ width: '100%', maxWidth: 450 }}>
-            <h2 style={{ marginBottom: '1rem' }}>Book Service</h2>
-            <form onSubmit={submitBooking}>
-              <div className="form-group">
-                <label>Date</label>
-                <input type="date" className="form-control" value={bookingForm.scheduled_date}
-                  onChange={(e) => setBookingForm({ ...bookingForm, scheduled_date: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Time</label>
-                <input type="time" className="form-control" value={bookingForm.scheduled_time}
-                  onChange={(e) => setBookingForm({ ...bookingForm, scheduled_time: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Address</label>
-                <input className="form-control" value={bookingForm.address}
-                  onChange={(e) => setBookingForm({ ...bookingForm, address: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Special Instructions</label>
-                <textarea className="form-control" value={bookingForm.special_instructions}
-                  onChange={(e) => setBookingForm({ ...bookingForm, special_instructions: e.target.value })} />
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="submit" className="btn btn-primary">Confirm Booking</button>
-                <button type="button" className="btn btn-outline" onClick={() => setShowBooking(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ServiceBookingModal
+          bookingForm={bookingForm}
+          setBookingForm={setBookingForm}
+          onSubmit={submitBooking}
+          onClose={() => setShowBooking(false)}
+        />
       )}
     </div>
   );

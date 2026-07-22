@@ -5,6 +5,7 @@ import { formatCFA } from '../utils/currency';
 import { useAuth } from '../contexts/AuthContext';
 import PaymentModal from '../components/PaymentModal';
 import MarketplaceSection from '../components/MarketplaceSection';
+import ServiceBookingModal from '../components/ServiceBookingModal';
 import toast from 'react-hot-toast';
 import './Landing.css';
 
@@ -145,40 +146,14 @@ const Landing = () => {
       </section>
 
       {showBooking && (
-        <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200 }}>
-          <div className="card" style={{ width: '100%', maxWidth: 450 }}>
-            <h2 style={{ marginBottom: '0.35rem' }}>Book Service</h2>
-            <p style={{ color: 'var(--text-muted)', marginBottom: '1rem' }}>
-              {selectedService?.name} - {selectedService?.company_name}
-            </p>
-            <form onSubmit={submitBooking}>
-              <div className="form-group">
-                <label>Date</label>
-                <input type="date" className="form-control" value={bookingForm.scheduled_date}
-                  onChange={(e) => setBookingForm({ ...bookingForm, scheduled_date: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Time</label>
-                <input type="time" className="form-control" value={bookingForm.scheduled_time}
-                  onChange={(e) => setBookingForm({ ...bookingForm, scheduled_time: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Address</label>
-                <input className="form-control" value={bookingForm.address}
-                  onChange={(e) => setBookingForm({ ...bookingForm, address: e.target.value })} required />
-              </div>
-              <div className="form-group">
-                <label>Special Instructions</label>
-                <textarea className="form-control" value={bookingForm.special_instructions}
-                  onChange={(e) => setBookingForm({ ...bookingForm, special_instructions: e.target.value })} />
-              </div>
-              <div style={{ display: 'flex', gap: '0.5rem' }}>
-                <button type="submit" className="btn btn-primary">Continue to Payment</button>
-                <button type="button" className="btn btn-outline" onClick={() => setShowBooking(false)}>Cancel</button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <ServiceBookingModal
+          service={selectedService}
+          bookingForm={bookingForm}
+          setBookingForm={setBookingForm}
+          onSubmit={submitBooking}
+          onClose={() => setShowBooking(false)}
+          submitLabel="Continue to Payment"
+        />
       )}
 
       <footer className="landing-footer">
